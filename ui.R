@@ -23,7 +23,7 @@ shinyUI(fluidPage(
                tags$a("Steven Brey | Ph.D. Student", 
                       href="http://atmos.colostate.edu/~sjbrey/"),
                tags$a("Source code", 
-                      href="https://github.com/stevenjoelbrey/smokeWheel"),
+                      href="https://github.com/stevenjoelbrey/HMSExplorer"),
                h5(textOutput("counter")))
 
 
