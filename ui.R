@@ -22,6 +22,9 @@ shinyUI(fluidPage(
                radioButtons("plotFires", "", c("Show HMS fires clusters", "hide"), 
                             selected = "Show HMS fires clusters", inline = TRUE),
 
+               radioButtons("plotCO", "", c("CO AQI", "hide"), 
+                            selected = "hide", inline = TRUE),
+               
                radioButtons("mergePlumes", "", 
                             c("show individual plumes", "merge overlapping"), 
                             selected = "show individual plumes", inline = FALSE),

@@ -11,11 +11,16 @@
 # Author: Steven Brey
 ########################################################################
 
+# PM25 = daily_88101
+# CO = daily_42101
+
 desiredColumns <- c("Latitude", "Longitude", "Date.Local", 
                     "Arithmetic.Mean", "AQI")
-species  <- "daily_88101"
-saveName <- "PM25"
-fileDir  <- paste0("data/AQS/", saveName, "/")
+species  <- "daily_42101"
+saveName <- "CO"
+fileDir  <- paste0("developmentData/")
+saveFileDir <- paste0("data/AQS/", saveName, "/")
+
 years    <- 2005:2015
 
 
@@ -23,7 +28,7 @@ for (i in 1:length(years)){
   
   f <- paste0(species, "_", years[i], ".csv")
   
-  df <- read.csv(paste0(fileDir, f), stringsAsFactors = FALSE)
+  df <- read.csv( paste0(fileDir, f) , stringsAsFactors = FALSE)
   colMask <- names(df) %in% desiredColumns 
   
   df_subset <- df[, colMask]
@@ -57,6 +62,7 @@ for (i in 1:length(years)){
   df_subset$AQIColor[Hazardous]     <- AQIColors[6]
   
   AQ_df <- df_subset
-  save(AQ_df, file=paste0(fileDir, saveName,"_", years[i], ".RData")   )
+  saveDiskName <- paste0(saveFileDir, saveName,"_", years[i], ".RData")
+  save(AQ_df, file = saveDiskName   )
   
 }

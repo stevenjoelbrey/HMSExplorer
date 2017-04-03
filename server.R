@@ -49,17 +49,6 @@ shinyServer(function(input, output) {
     
     smokePoly <- get(load(plumeFile))
     
-    ###########################################
-    # Get the desired AQS monitors to plot
-    ###########################################
-    year <- str_sub(yyyymmdd,1,4)
-    monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
-    load(monitorFile) # loads "AQ_df" of class dataframe
-    
-    # subset to this date and get rid of NA AQI
-    dateMask <- AQ_df$Date.Local == as.POSIXct(s, tz="UTC")
-    missingAQIMask <- !is.na(AQ_df$AQI)
-    AQ_df    <- AQ_df[dateMask & missingAQIMask,]
     
     ###########################################
     # put map layers together
@@ -73,16 +62,28 @@ shinyServer(function(input, output) {
     m = m %>% addScaleBar()
     
     if(input$plotPM25=="PM2.5 FRM/FEM Mass AQI"){
+      
+        year <- str_sub(yyyymmdd,1,4)
+        monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
+        load(monitorFile) # loads "AQ_df" of class dataframe
+      
+        # subset to this date and get rid of NA AQI
+        dateMask <- AQ_df$Date.Local == as.POSIXct(s, tz="UTC")
+        missingAQIMask <- !is.na(AQ_df$AQI)
+        PM_df    <- AQ_df[dateMask & missingAQIMask,]
+      
         m = m %>% addCircleMarkers(
-                    lng=AQ_df$Longitude,
-                    lat=AQ_df$Latitude,
-                    color=AQ_df$AQIColor,
+                    lng=PM_df$Longitude,
+                    lat=PM_df$Latitude,
+                    color=PM_df$AQIColor,
                     radius=10,
                     fillOpacity=0.8,
                     stroke=FALSE,
-                    label=paste(as.character(AQ_df$Arithmetic.Mean), "ug/m2")
+                    label=paste(as.character(PM_df$Arithmetic.Mean), "ug/m2")
                   )
     }
+    
+    
     
     if (input$plotFires == "Show HMS fires clusters"){
       
@@ -105,6 +106,44 @@ shinyServer(function(input, output) {
         label= hysplitPoints_land$ModisGroupName
       ) 
     }
+    
+    #########################################
+    # Handle addition of CO monitor plotting 
+    #########################################
+    if(input$plotCO=="CO AQI"){
+      
+      year <- str_sub(yyyymmdd,1,4)
+      monitorFile <- paste0("data/AQS/CO/CO_",year,".RData")
+      load(monitorFile) # loads "AQ_df" of class dataframe
+      
+      # subset to this date and get rid of NA AQI
+      dateMask <- AQ_df$Date.Local == as.POSIXct(s, tz="UTC")
+      missingAQIMask <- !is.na(AQ_df$AQI)
+      CO_df    <- AQ_df[dateMask & missingAQIMask,]      
+      
+      
+      m = m %>% addCircleMarkers(
+        lng=CO_df$Longitude,
+        lat=CO_df$Latitude,
+        color=CO_df$AQIColor,
+        radius=10,
+        fillOpacity=0.8,
+        stroke=FALSE,
+        label=paste(as.character(CO_df$Arithmetic.Mean), "ppm")
+      )
+    }
+    
+    # output$out <- renderPrint({
+    #   validate(need(input$map_click, FALSE))
+    #   click <- input$map_click
+    #   clat <- click$lat
+    #   clng <- click$lng
+    #   address <- revgeocode(c(clng,clat))
+    #   print(clat)
+    #   print(clng)
+    #   print(address)
+    #   
+    # })
 
     # Must "return?" map object
     m
