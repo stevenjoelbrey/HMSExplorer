@@ -74,11 +74,11 @@ shinyServer(function(input, output) {
     yyyymmdd <- str_replace_all(s, "-", "")
     
     # Do we want to load merged plumes or individual? 
-    if(mergePlumes == "show individual"){
+    if(mergePlumes == "show individual plumes"){
       
       plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
       
-    } else if(mergePlumes == "merge plumes"){
+    } else if(mergePlumes == "merge overlapping"){
       
       plumeFile <- paste0('data/smoke/', yyyymmdd, "_merged_smoke.RData")
       
@@ -106,7 +106,7 @@ shinyServer(function(input, output) {
                        options = providerTileOptions(noWrap = TRUE)
                        ) 
     m = m %>% setView(lng=-100, lat=40, zoom=3)
-    m = m %>% addPolygons(data = smokePoly, fillColor="gray", color="gray") 
+    m = m %>% addPolygons(data = smokePoly, fillColor="gray47", color="gray47") 
     m = m %>% addScaleBar()
     
     if(input$plotPM25=="PM2.5 FRM/FEM Mass AQI"){

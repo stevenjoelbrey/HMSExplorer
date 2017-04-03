@@ -20,14 +20,14 @@ shinyUI(fluidPage(
                             selected = "PM2.5 FRM/FEM Mass AQI", inline = TRUE),
                
                radioButtons("plotFires", "", c("Show HMS fires clusters", "hide"), 
-                            selected = "hide", inline = TRUE),
+                            selected = "Show HMS fires clusters", inline = TRUE),
 
-               radioButtons("mergePlumes", "", c("show individual", "merge plumes"), 
-                            selected = "show individual", inline = TRUE),
+               radioButtons("mergePlumes", "", 
+                            c("show individual plumes", "merge overlapping"), 
+                            selected = "show individual plumes", inline = FALSE),
               
                conditionalPanel(
                  condition = "input.plotPM25 == 'PM2.5 FRM/FEM Mass AQI'",
-                 #sliderInput("breakCount", "Break Count", min=1, max=1000, value=10)
                  img(src="aqi_legend.png", align = "left")
                ),
                
