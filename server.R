@@ -36,20 +36,52 @@ shinyServer(function(input, output) {
   ###########################################
   # Get the plumeDate smoke plot for plotting 
   ###########################################
-  smokePoly <- eventReactive(input$plumeDate,{
-    
-    s <- input$plumeDate
-    print(s)
-    yyyymmdd <- str_replace_all(s, "-", "")
-    plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
-    get(load(plumeFile))
-    
-  }, ignoreNULL = TRUE)
+  # TODO: React tp radio button change also 
+  # smokePoly <- eventReactive(input$plumeDate,{
+  #   
+  #   s <- input$plumeDate
+  #   print(s)
+  #   yyyymmdd <- str_replace_all(s, "-", "")
+  #   
+  #   # Do we want to load merged plumes or individual? 
+  #   if(input$mergePlumes == "individual"){
+  #     
+  #     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
+  #     
+  #   } else if(input$mergePlumes == "mergePlumes"){
+  #     
+  #     plumeFile <- paste0('data/smoke/', yyyymmdd, "_merged_smoke.RData")
+  #     
+  #   }
+  #   
+  #   get(load(plumeFile))
+  #   
+  # }, ignoreNULL = TRUE)
   
   ######################################
   # Create the map with desired layers 
   ######################################
   output$mymap <- renderLeaflet({
+    
+    ######################################
+    s <- input$plumeDate
+    mergePlumes <- input$mergePlumes
+    yyyymmdd <- str_replace_all(s, "-", "")
+    
+    # Do we want to load merged plumes or individual? 
+    if(mergePlumes == "individual"){
+      
+      plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
+      
+    } else if(mergePlumes == "mergePlumes"){
+      
+      plumeFile <- paste0('data/smoke/', yyyymmdd, "_merged_smoke.RData")
+      
+    }
+    
+    smokePoly <- get(load(plumeFile))
+    ######################################
+    
     leaflet() %>%
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
@@ -63,7 +95,7 @@ shinyServer(function(input, output) {
       ) %>%
       
       setView(lng=-100, lat=40, zoom=3) %>%
-      addPolygons(data = smokePoly()) %>%
+      addPolygons(data = smokePoly) %>%
       addScaleBar()
       
   })
