@@ -43,7 +43,22 @@ shinyServer(function(input, output) {
   ###########################################
   # Get the desired AQS monitors to plot
   ###########################################
-  #plotAQS <- eventReactive(input$plotPM25,{functionality})
+  # plotAQS <- eventReactive(input$plotPM25,{
+  #   
+  #   if(input$plotPM25=="show PM2.5 monitors AQI"){
+  #     m = m %>% addCircleMarkers(
+  #       lng=AQ_df$Longitude,
+  #       lat=AQ_df$Latitude,
+  #       color=AQ_df$AQIColor,
+  #       radius=10,
+  #       fillOpacity=0.8,
+  #       stroke=FALSE,
+  #       label=AQ_df$AQI
+  #     )
+  #     m
+  #   }
+  #   
+  # })
 
   
   ######################################
@@ -59,11 +74,11 @@ shinyServer(function(input, output) {
     yyyymmdd <- str_replace_all(s, "-", "")
     
     # Do we want to load merged plumes or individual? 
-    if(mergePlumes == "individual"){
+    if(mergePlumes == "show individual"){
       
       plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
       
-    } else if(mergePlumes == "mergePlumes"){
+    } else if(mergePlumes == "merge plumes"){
       
       plumeFile <- paste0('data/smoke/', yyyymmdd, "_merged_smoke.RData")
       
@@ -78,10 +93,14 @@ shinyServer(function(input, output) {
     monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
     load(monitorFile) # loads "AQ_df" of class dataframe
     
-    # subset to this date
+    # subset to this date and get rid of NA AQI
     dateMask <- AQ_df$Date.Local == as.POSIXct(s, tz="UTC")
-    AQ_df    <- AQ_df[dateMask,]
+    missingAQIMask <- !is.na(AQ_df$AQI)
+    AQ_df    <- AQ_df[dateMask & missingAQIMask,]
     
+    ###########################################
+    # put map layers together
+    ###########################################
     m = leaflet() %>%  
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
@@ -90,7 +109,7 @@ shinyServer(function(input, output) {
     m = m %>% addPolygons(data = smokePoly, fillColor="gray", color="gray") 
     m = m %>% addScaleBar()
     
-    if(input$plotPM25=="show PM2.5 monitors AQI"){
+    if(input$plotPM25=="PM2.5 FRM/FEM Mass AQI"){
         m = m %>% addCircleMarkers(
                     lng=AQ_df$Longitude,
                     lat=AQ_df$Latitude,
@@ -98,11 +117,11 @@ shinyServer(function(input, output) {
                     radius=10,
                     fillOpacity=0.8,
                     stroke=FALSE,
-                    label=AQ_df$AQI
+                    label=paste(as.character(AQ_df$Arithmetic.Mean), "ug/m2")
                   )
     }
     
-    if (input$plotFires == "show HMS fire clusters"){
+    if (input$plotFires == "Show HMS fires clusters"){
       m = m %>% addMarkers(
         data = hysplitPoints(),
         clusterOptions = markerClusterOptions(),

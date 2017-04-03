@@ -15,16 +15,22 @@ shinyUI(fluidPage(
                          min = "2005-08-05", max = "2015-12-30",
                          format = "yyyy-mm-dd", startview = "month",
                          language = "en", width = "100%"),
-            
-              radioButtons("plotFires", "", c("show HMS fire clusters", "hide"), 
-                           selected = "hide", inline = TRUE),
+               
+               radioButtons("plotPM25", "", c("PM2.5 FRM/FEM Mass AQI", "hide"), 
+                            selected = "PM2.5 FRM/FEM Mass AQI", inline = TRUE),
+               
+               radioButtons("plotFires", "", c("Show HMS fires clusters", "hide"), 
+                            selected = "hide", inline = TRUE),
+
+               radioButtons("mergePlumes", "", c("show individual", "merge plumes"), 
+                            selected = "show individual", inline = TRUE),
               
-              radioButtons("plotPM25", "", c("show PM2.5 monitors AQI", "hide"), 
-                           selected = "hide", inline = TRUE),
-              
-              radioButtons("mergePlumes", "", c("mergePlumes", "individual"), 
-                           selected = "individual", inline = TRUE),
-              
+               conditionalPanel(
+                 condition = "input.plotPM25 == 'PM2.5 FRM/FEM Mass AQI'",
+                 #sliderInput("breakCount", "Break Count", min=1, max=1000, value=10)
+                 img(src="aqi_legend.png", align = "left")
+               ),
+               
               width = 3
             
   ),
@@ -34,8 +40,7 @@ shinyUI(fluidPage(
   leafletOutput("mymap" , width = "70%", height = 700),
 
 
-  sidebarPanel(h5("Created by:"),
-               tags$a("Steven Brey | Ph.D. Student |", 
+  sidebarPanel(tags$a("Steven Brey | Ph.D. Student |", 
                       href="http://atmos.colostate.edu/~sjbrey/"),
                tags$a("Source code |", 
                       href="https://github.com/stevenjoelbrey/HMSExplorer"),
