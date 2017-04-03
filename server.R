@@ -68,7 +68,7 @@ shinyServer(function(input, output) {
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
                        ) 
-    m = m %>% setView(lng=-100, lat=40, zoom=3)
+    m = m %>% setView(lng=-100, lat=40, zoom=4)
     m = m %>% addPolygons(data = smokePoly, fillColor="gray47", color="gray47") 
     m = m %>% addScaleBar()
     

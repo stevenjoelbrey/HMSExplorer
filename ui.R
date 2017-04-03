@@ -8,7 +8,7 @@ library(stringr)
 
 shinyUI(fluidPage(
 
-  headerPanel("NOAA Hazard Mapping System Smoke Impact Explorer"),
+  headerPanel("NESDIS Hazard Mapping System Smoke Impact Explorer"),
   
   sidebarPanel(dateInput(inputId="plumeDate", label="Analysis Date", 
                          value = "2012-06-13", 
@@ -37,7 +37,7 @@ shinyUI(fluidPage(
   
     
   # Place the map onto the interface   
-  leafletOutput("mymap" , width = "70%", height = 700),
+  leafletOutput("mymap" , width = "75%", height = 700),
 
 
   sidebarPanel(tags$a("Steven Brey | Ph.D. Student |", 
@@ -46,9 +46,9 @@ shinyUI(fluidPage(
                       href="https://github.com/stevenjoelbrey/HMSExplorer"),
                tags$a("NESDIS HMS |", 
                       href="http://www.ospo.noaa.gov/Products/land/hms.html"),
-               #tags$a("EPA monitor data", 
-               #       href="http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html"),
-               #p("If you find bugs or have questions, please contact me via the link above"),
+               tags$a("EPA monitor data", 
+                      href="http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html"),
+               p("If you find bugs or have questions, please contact me via the link above"),
                h5(textOutput("counter")),
                
                
