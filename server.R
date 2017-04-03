@@ -14,6 +14,12 @@ fireIcons <- icons(
   iconHeight = 20
 )
 
+AQSIcons <- icons(
+  
+  iconWidth = 5, 
+  iconHeight = 5
+  
+)
 
 shinyServer(function(input, output) {
 
@@ -33,37 +39,21 @@ shinyServer(function(input, output) {
     
   }, ignoreNULL = TRUE)
   
+
   ###########################################
-  # Get the plumeDate smoke plot for plotting 
+  # Get the desired AQS monitors to plot
   ###########################################
-  # TODO: React tp radio button change also 
-  # smokePoly <- eventReactive(input$plumeDate,{
-  #   
-  #   s <- input$plumeDate
-  #   print(s)
-  #   yyyymmdd <- str_replace_all(s, "-", "")
-  #   
-  #   # Do we want to load merged plumes or individual? 
-  #   if(input$mergePlumes == "individual"){
-  #     
-  #     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
-  #     
-  #   } else if(input$mergePlumes == "mergePlumes"){
-  #     
-  #     plumeFile <- paste0('data/smoke/', yyyymmdd, "_merged_smoke.RData")
-  #     
-  #   }
-  #   
-  #   get(load(plumeFile))
-  #   
-  # }, ignoreNULL = TRUE)
+  #plotAQS <- eventReactive(input$plotPM25,{functionality})
+
   
   ######################################
   # Create the map with desired layers 
   ######################################
   output$mymap <- renderLeaflet({
     
-    ######################################
+    ###########################################
+    # Get the desired smoke plumes for plotting
+    ###########################################
     s <- input$plumeDate
     mergePlumes <- input$mergePlumes
     yyyymmdd <- str_replace_all(s, "-", "")
@@ -80,24 +70,48 @@ shinyServer(function(input, output) {
     }
     
     smokePoly <- get(load(plumeFile))
-    ######################################
     
-    leaflet() %>%
+    ###########################################
+    # Get the desired AQS monitors to plot
+    ###########################################
+    year <- str_sub(yyyymmdd,1,4)
+    monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
+    load(monitorFile) # loads "AQ_df" of class dataframe
+    
+    # subset to this date
+    dateMask <- AQ_df$Date.Local == as.POSIXct(s, tz="UTC")
+    AQ_df    <- AQ_df[dateMask,]
+    
+    m = leaflet() %>%  
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
-      ) %>%
-      #addCircleMarkers(data = hysplitPoints()) %>%
-      
-      addMarkers(
+                       ) 
+    m = m %>% setView(lng=-100, lat=40, zoom=3)
+    m = m %>% addPolygons(data = smokePoly, fillColor="gray", color="gray") 
+    m = m %>% addScaleBar()
+    
+    if(input$plotPM25=="show PM2.5 monitors AQI"){
+        m = m %>% addCircleMarkers(
+                    lng=AQ_df$Longitude,
+                    lat=AQ_df$Latitude,
+                    color=AQ_df$AQIColor,
+                    radius=10,
+                    fillOpacity=0.8,
+                    stroke=FALSE,
+                    label=AQ_df$AQI
+                  )
+    }
+    
+    if (input$plotFires == "show HMS fire clusters"){
+      m = m %>% addMarkers(
         data = hysplitPoints(),
         clusterOptions = markerClusterOptions(),
         icon = fireIcons
-      ) %>%
-      
-      setView(lng=-100, lat=40, zoom=3) %>%
-      addPolygons(data = smokePoly) %>%
-      addScaleBar()
-      
+      ) 
+    }
+
+    # Must "return?" map object
+    m
   })
   
 

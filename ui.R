@@ -16,11 +16,14 @@ shinyUI(fluidPage(
                          format = "yyyy-mm-dd", startview = "month",
                          language = "en", width = "100%"),
             
+              radioButtons("plotFires", "", c("show HMS fire clusters", "hide"), 
+                           selected = "hide", inline = TRUE),
+              
+              radioButtons("plotPM25", "", c("show PM2.5 monitors AQI", "hide"), 
+                           selected = "hide", inline = TRUE),
+              
               radioButtons("mergePlumes", "", c("mergePlumes", "individual"), 
                            selected = "individual", inline = TRUE),
-              
-              radioButtons("plotPM25", "", c("show PM2.5 monitors", "hide"), 
-                           selected = "hide", inline = TRUE),
               
               width = 3
             
