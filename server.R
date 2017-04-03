@@ -23,44 +23,7 @@ AQSIcons <- icons(
 
 shinyServer(function(input, output) {
 
-  ###########################################
-  # Get selected date hysplit points
-  ###########################################
-  hysplitPoints <- eventReactive(input$plumeDate, {
-    
-    dateSelect <- as.POSIXct(input$plumeDate, tz="UTC")
-    hpDates    <- hysplitPoints_land$Date
-    dateMask   <- hpDates == dateSelect 
-    
-    lon <- as.numeric(hysplitPoints_land$Lon[dateMask])
-    lat <- as.numeric(hysplitPoints_land$Lat[dateMask])
-    
-    cbind(lon, lat)
-    
-  }, ignoreNULL = TRUE)
-  
 
-  ###########################################
-  # Get the desired AQS monitors to plot
-  ###########################################
-  # plotAQS <- eventReactive(input$plotPM25,{
-  #   
-  #   if(input$plotPM25=="show PM2.5 monitors AQI"){
-  #     m = m %>% addCircleMarkers(
-  #       lng=AQ_df$Longitude,
-  #       lat=AQ_df$Latitude,
-  #       color=AQ_df$AQIColor,
-  #       radius=10,
-  #       fillOpacity=0.8,
-  #       stroke=FALSE,
-  #       label=AQ_df$AQI
-  #     )
-  #     m
-  #   }
-  #   
-  # })
-
-  
   ######################################
   # Create the map with desired layers 
   ######################################
@@ -122,10 +85,24 @@ shinyServer(function(input, output) {
     }
     
     if (input$plotFires == "Show HMS fires clusters"){
+      
+      dateSelect <- as.POSIXct(input$plumeDate, tz="UTC")
+      hpDates    <- hysplitPoints_land$Date
+      dateMask   <- hpDates == dateSelect 
+      
+      # subset to selected date only 
+      hysplitPoints_land <- hysplitPoints_land[dateMask, ]
+      
+      lon <- as.numeric(hysplitPoints_land$Lon)
+      lat <- as.numeric(hysplitPoints_land$Lat)
+      
+      
       m = m %>% addMarkers(
-        data = hysplitPoints(),
+        lng=lon,
+        lat=lat,
         clusterOptions = markerClusterOptions(),
-        icon = fireIcons
+        icon = fireIcons,
+        label= hysplitPoints_land$ModisGroupName
       ) 
     }
 
