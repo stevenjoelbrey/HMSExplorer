@@ -10,19 +10,25 @@ shinyUI(fluidPage(
 
   headerPanel("NESDIS Hazard Mapping System Smoke Impact Explorer"),
   
-  sidebarPanel(dateInput(inputId="plumeDate", label="Analysis Date", 
+  sidebarPanel(
+              h3("Data layers"),
+              
+              dateInput(inputId="plumeDate", label="Analysis Date", 
                          value = "2012-06-13", 
                          min = "2005-08-05", max = "2015-12-30",
                          format = "yyyy-mm-dd", startview = "month",
                          language = "en", width = "100%"),
                
+               radioButtons("plotFires", "", c("Show HMS fires clusters", "hide"), 
+                            selected = "Show HMS fires clusters", inline = TRUE),
+               
                radioButtons("plotPM25", "", c("PM2.5 FRM/FEM Mass AQI", "hide"), 
                             selected = "PM2.5 FRM/FEM Mass AQI", inline = TRUE),
                
-               radioButtons("plotFires", "", c("Show HMS fires clusters", "hide"), 
-                            selected = "Show HMS fires clusters", inline = TRUE),
-
                radioButtons("plotCO", "", c("CO AQI", "hide"), 
+                            selected = "hide", inline = TRUE),
+               
+               radioButtons("plotOzone", "", c("Ozone AQI", "hide"), 
                             selected = "hide", inline = TRUE),
                
                radioButtons("mergePlumes", "", 
@@ -30,7 +36,7 @@ shinyUI(fluidPage(
                             selected = "show individual plumes", inline = FALSE),
               
                conditionalPanel(
-                 condition = "input.plotPM25 == 'PM2.5 FRM/FEM Mass AQI'",
+                 condition = "input.plotPM25 == 'PM2.5 FRM/FEM Mass AQI' | input.plotCO == 'CO AQI' | input.plotOzone == 'Ozone AQI'",
                  img(src="aqi_legend.png", align = "left")
                ),
                

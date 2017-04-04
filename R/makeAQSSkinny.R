@@ -13,11 +13,14 @@
 
 # PM25 = daily_88101
 # CO = daily_42101
+# ozone = daily_44201
+
 
 desiredColumns <- c("Latitude", "Longitude", "Date.Local", 
                     "Arithmetic.Mean", "AQI")
-species  <- "daily_42101"
-saveName <- "CO"
+
+species  <- "daily_44201"
+saveName <- "ozone"
 fileDir  <- paste0("developmentData/")
 saveFileDir <- paste0("data/AQS/", saveName, "/")
 

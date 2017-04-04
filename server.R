@@ -79,10 +79,9 @@ shinyServer(function(input, output) {
                     radius=10,
                     fillOpacity=0.8,
                     stroke=FALSE,
-                    label=paste(as.character(PM_df$Arithmetic.Mean), "ug/m2")
+                    label=paste("PM =",as.character(PM_df$Arithmetic.Mean), "ug/m2")
                   )
     }
-    
     
     
     if (input$plotFires == "Show HMS fires clusters"){
@@ -103,7 +102,8 @@ shinyServer(function(input, output) {
         lat=lat,
         clusterOptions = markerClusterOptions(),
         icon = fireIcons,
-        label= hysplitPoints_land$ModisGroupName
+        label= paste(hysplitPoints_land$ModisGroupName, 
+                     "| Duration:", hysplitPoints_land$Dur, "\n")
       ) 
     }
     
@@ -121,7 +121,6 @@ shinyServer(function(input, output) {
       missingAQIMask <- !is.na(AQ_df$AQI)
       CO_df    <- AQ_df[dateMask & missingAQIMask,]      
       
-      
       m = m %>% addCircleMarkers(
         lng=CO_df$Longitude,
         lat=CO_df$Latitude,
@@ -129,9 +128,36 @@ shinyServer(function(input, output) {
         radius=10,
         fillOpacity=0.8,
         stroke=FALSE,
-        label=paste(as.character(CO_df$Arithmetic.Mean), "ppm")
+        label=paste("CO =",as.character(CO_df$Arithmetic.Mean), "ppm")
       )
     }
+    
+    #########################################
+    # Handle addition of Ozone monitor plotting 
+    #########################################
+    if(input$plotOzone == "Ozone AQI"){
+      
+      year <- str_sub(yyyymmdd,1,4)
+      monitorFile <- paste0("data/AQS/ozone/ozone_",year,".RData")
+      load(monitorFile) # loads "AQ_df" of class dataframe
+      
+      # subset to this date and get rid of NA AQI
+      dateMask <- AQ_df$Date.Local == as.POSIXct(s, tz="UTC")
+      missingAQIMask <- !is.na(AQ_df$AQI)
+      ozone_df    <- AQ_df[dateMask & missingAQIMask,]      
+      
+      m = m %>% addCircleMarkers(
+        lng=ozone_df$Longitude,
+        lat=ozone_df$Latitude,
+        color=ozone_df$AQIColor,
+        radius=10,
+        fillOpacity=0.8,
+        stroke=FALSE,
+        label=paste("O3 =", as.character(ozone_df$Arithmetic.Mean*1000), "ppb")
+      )
+    }
+    
+    
     
     # output$out <- renderPrint({
     #   validate(need(input$map_click, FALSE))
