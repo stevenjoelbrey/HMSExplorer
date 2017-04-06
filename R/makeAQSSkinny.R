@@ -17,7 +17,7 @@
 
 
 desiredColumns <- c("Latitude", "Longitude", "Date.Local", 
-                    "Arithmetic.Mean", "AQI")
+                    "Arithmetic.Mean", "X1st.Max.Value","AQI")
 
 species  <- "daily_44201"
 saveName <- "ozone"

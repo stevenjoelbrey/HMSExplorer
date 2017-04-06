@@ -21,13 +21,26 @@ AQSIcons <- icons(
   
 )
 
-shinyServer(function(input, output) {
+# # Present day analysis 
+# fire  <- 'http://www.ospo.noaa.gov/data/land/fire/fire.kml'
+# smoke <- 'http://www.ospo.noaa.gov/data/land/fire/smoke.kml' 
+
+
+shinyServer(function(input, output, session) {
 
 
   ######################################
   # Create the map with desired layers 
   ######################################
   output$mymap <- renderLeaflet({
+    
+    # Give user progress message while page loads 
+    progress <- Progress$new(session, min=5, max=15)
+    on.exit(progress$close())
+    
+    progress$set(message = 'Loading Maps. ',
+                 detail = 'This may take a moment...')
+    
     
     ###########################################
     # Get the desired smoke plumes for plotting
@@ -79,11 +92,14 @@ shinyServer(function(input, output) {
                     radius=10,
                     fillOpacity=0.8,
                     stroke=FALSE,
-                    label=paste("PM =",as.character(PM_df$Arithmetic.Mean), "ug/m2")
+                    label=paste("PM25 AQI =", PM_df$AQI ,"(",
+                                as.character(PM_df$Arithmetic.Mean), "ug/m2)")
                   )
     }
     
-    
+    ###########################################
+    # Show fire locations
+    ###########################################
     if (input$plotFires == "Show HMS fires clusters"){
       
       dateSelect <- as.POSIXct(input$plumeDate, tz="UTC")
@@ -103,7 +119,10 @@ shinyServer(function(input, output) {
         clusterOptions = markerClusterOptions(),
         icon = fireIcons,
         label= paste(hysplitPoints_land$ModisGroupName, 
-                     "| Duration:", hysplitPoints_land$Dur, "\n")
+                     "| Duration:", 
+                     as.numeric(str_sub(hysplitPoints_land$Dur,1,2)), 
+                     #hysplitPoints_land$Dur,
+                     "hrs")
       ) 
     }
     
@@ -153,7 +172,9 @@ shinyServer(function(input, output) {
         radius=10,
         fillOpacity=0.8,
         stroke=FALSE,
-        label=paste("O3 =", as.character(ozone_df$Arithmetic.Mean*1000), "ppb")
+        label=paste("O3 AQI =", as.character(ozone_df$AQI), "(MDA8 =",
+                    as.character(ozone_df$X1st.Max.Value * 1000), "ppb)")
+        
       )
     }
     
