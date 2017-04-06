@@ -1,0 +1,14 @@
+README
+
+This project is indented to make explore HMS smoke plumes and EPA AQS data easy and comes with NO WARRANTY. 
+
+These data were collected using funding from the U.S. Government and can be used without additional permissions or fees.
+
+If you have any questions please contact me at sjbrey@rams.colostate.edu
+
+Links to data and agencies follow:
+
+EPA AQS data: http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html
+
+NESDIS HMS Smoke plumes: http://www.ospo.noaa.gov/Products/land/hms.html. Contact thier office for link to ftp site where plumes were originaly obtained.
+Good reference describing the HMS "Recent changes to the Hazard Mapping System" https://www.researchgate.net/publication/228625934_Recent_changes_to_the_Hazard_Mapping_System
