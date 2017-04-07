@@ -190,7 +190,7 @@ shinyServer(function(input, output, session) {
     m
   })
 
-  observeEvent(input$click,{
+  observeEvent(input$plotUSFSFires,{
 
     # Create a mask of active reported fires
     s <- input$plumeDate

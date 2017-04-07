@@ -34,7 +34,7 @@ shinyUI(fluidPage(
                             c("show individual plumes", "merge overlapping"), 
                             selected = "show individual plumes", inline = TRUE),
               
-              actionButton("click", "Show reported fires"),
+              actionButton("plotUSFSFires", "Reported Fires"),
               
                conditionalPanel(
                  condition = "input.plotPM25 == 'PM2.5 FRM/FEM Mass AQI' | input.plotCO == 'CO AQI' | input.plotOzone == 'Ozone AQI'",
