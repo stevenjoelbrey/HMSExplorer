@@ -5,6 +5,12 @@
 
 # loads "hysplitPoints_land" dataframe
 load("data/hysplitPoints_land_both.RData") 
+load("data/fireOccurrence.RData")
+
+
+# TODO: Move the creation of the map outside of of events so it is never redrawn
+# http://stackoverflow.com/questions/37433569/changing-leaflet-map-according-to-input-without-redrawing
+
 
 # Connect to a fire png logo and make small enough that plotting on map looks 
 # nice
@@ -74,7 +80,7 @@ shinyServer(function(input, output, session) {
     m = m %>% addPolygons(data = smokePoly, fillColor="gray47", color="gray47") 
     m = m %>% addScaleBar()
     
-    if(input$plotPM25=="PM2.5 FRM/FEM Mass AQI"){
+    if(input$plotPM25=="show"){
       
         year <- str_sub(yyyymmdd,1,4)
         monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
@@ -100,9 +106,10 @@ shinyServer(function(input, output, session) {
     ###########################################
     # Show fire locations
     ###########################################
-    if (input$plotFires == "Show HMS fires clusters"){
+    if (input$plotFires == "show"){
       
       dateSelect <- as.POSIXct(input$plumeDate, tz="UTC")
+      print(paste("dateSelect", dateSelect))
       hpDates    <- hysplitPoints_land$Date
       dateMask   <- hpDates == dateSelect 
       
@@ -129,7 +136,7 @@ shinyServer(function(input, output, session) {
     #########################################
     # Handle addition of CO monitor plotting 
     #########################################
-    if(input$plotCO=="CO AQI"){
+    if(input$plotCO=="show"){
       
       year <- str_sub(yyyymmdd,1,4)
       monitorFile <- paste0("data/AQS/CO/CO_",year,".RData")
@@ -154,7 +161,7 @@ shinyServer(function(input, output, session) {
     #########################################
     # Handle addition of Ozone monitor plotting 
     #########################################
-    if(input$plotOzone == "Ozone AQI"){
+    if(input$plotOzone == "show"){
       
       year <- str_sub(yyyymmdd,1,4)
       monitorFile <- paste0("data/AQS/ozone/ozone_",year,".RData")
@@ -178,23 +185,52 @@ shinyServer(function(input, output, session) {
       )
     }
     
-    
-    
-    # output$out <- renderPrint({
-    #   validate(need(input$map_click, FALSE))
-    #   click <- input$map_click
-    #   clat <- click$lat
-    #   clng <- click$lng
-    #   address <- revgeocode(c(clng,clat))
-    #   print(clat)
-    #   print(clng)
-    #   print(address)
-    #   
-    # })
 
     # Must "return?" map object
     m
   })
-  
+
+  observeEvent(input$click,{
+
+    # Create a mask of active reported fires
+    s <- input$plumeDate
+    yyyymmdd <- str_replace_all(s, "-", "")
+    print(s)
+    dateSelect <- as.POSIXct(yyyymmdd, format="%Y%m%d", tz="UTC")
+    print(dateSelect)
+    
+    print("About to read from fire_data dates")
+    fireStart <- fire_data$DISCOVERY_DATE
+    fireEnd   <- fire_data$CONT_DATE
+    
+    #print("About to enter if statement")
+    # Make sure we have data in range
+    #if ( max(fireEnd, na.rm=TRUE)  <= dateSelect){
+      
+    #print("inside if statement")
+      
+    # fdf = fireDataFrame
+    m1 <- dateSelect >= fireStart 
+    m2 <- dateSelect <= fireEnd
+    dateMask  <- m1 & m2
+    fdf <- fire_data[dateMask,]
+      
+    #print(dim(fdf))
+      
+    leafletProxy("mymap") %>%
+      addMarkers(
+        lng=fdf$LONGITUDE,
+        lat=fdf$LATITUDE,
+        clusterOptions = markerClusterOptions(),
+        #icon = fireIcons,
+        label= paste(fdf$FIRE_NAME,", \n cuase:",fdf$STAT_CAUSE_DESCR)
+        )
+      
+    #}
+    
+    
+
+  })
+    
 
 })

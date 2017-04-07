@@ -12,3 +12,7 @@ EPA AQS data: http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html
 
 NESDIS HMS Smoke plumes: http://www.ospo.noaa.gov/Products/land/hms.html. Contact thier office for link to ftp site where plumes were originaly obtained.
 Good reference describing the HMS "Recent changes to the Hazard Mapping System" https://www.researchgate.net/publication/228625934_Recent_changes_to_the_Hazard_Mapping_System
+
+USFS fire occurance data: https://www.fs.usda.gov/rds/archive/Product/RDS-2013-0009.3/
+  Short, Karen C. 2015. Spatial wildfire occurrence data for the United States, 1992-2013 [FPA_FOD_201   50323]. 3rd Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737   /RDS-2013-0009.3
+
