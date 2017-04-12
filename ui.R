@@ -7,21 +7,19 @@ library(stringr)
 loading <- "True"
 
 shinyUI(fluidPage(
-  tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-  
+
   headerPanel("Smoke Impact Explorer"),
-  
+ 
   # conditionalPanel(condition = "loading== 'True'",
   #                  img="ajax_loader_blue_512.gif"),
   
-  leafletOutput("mymap" , width = "100%", height = 710),
+  leafletOutput("mymap" , width = "100%", height = 700),
   absolutePanel(top = 70, left = 70,
-                
-                dateInput(inputId="plumeDate", label="Analysis Date", 
-                          value = "2012-06-13", 
+                dateInput(inputId="plumeDate", label="Analysis Date",
+                          value = "2012-06-13",
                           min = "2005-08-05", max = "2015-12-30",
                           format = "yyyy-mm-dd", startview = "month",
-                          language = "en", 
+                          language = "en",
                           width=110)
   ),
 

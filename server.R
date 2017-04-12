@@ -123,7 +123,7 @@ shinyServer(function(input, output, session) {
     map <- leaflet(smokePoly) %>%
       
       setView(lng=-100, lat=40, zoom=4) %>%
-      addScaleBar() %>%
+      addScaleBar(position="bottomright") %>%
       
       # Base groups
       addTiles(group = "OSM (default)") %>%
@@ -146,11 +146,20 @@ shinyServer(function(input, output, session) {
             group="HMS Fires"
             ) %>%
       
+      addMarkers(
+        layerId="USFSFires",
+        lng=fdf$LONGITUDE,
+        lat=fdf$LATITUDE,
+        clusterOptions = markerClusterOptions(),
+        label= paste(fdf$FIRE_NAME,", \n cuase:",fdf$STAT_CAUSE_DESCR),
+        group="USFS Reported Fires"
+      ) %>%
+      
       addCircleMarkers(
         lng=PM_df$Longitude,
         lat=PM_df$Latitude,
         color=PM_df$AQIColor,
-        radius=10,
+        radius=8,
         fillOpacity=0.8,
         stroke=FALSE,
         label=paste("PM25 AQI =", PM_df$AQI ,"(",
@@ -173,7 +182,7 @@ shinyServer(function(input, output, session) {
         lng=ozone_df$Longitude,
         lat=ozone_df$Latitude,
         color=ozone_df$AQIColor,
-        radius=10,
+        radius=6,
         fillOpacity=0.8,
         stroke=FALSE,
         label=paste("O3 AQI =", as.character(ozone_df$AQI), "(MDA8 =",
@@ -182,32 +191,22 @@ shinyServer(function(input, output, session) {
         
       ) %>%
       
-      addMarkers(
-        layerId="USFSFires",
-        lng=fdf$LONGITUDE,
-        lat=fdf$LATITUDE,
-        clusterOptions = markerClusterOptions(),
-        label= paste(fdf$FIRE_NAME,", \n cuase:",fdf$STAT_CAUSE_DESCR),
-        group="USFS Reported Fires"
-      ) %>%
-      
       # Layers control
       addLayersControl(
-        position="topleft",
+        position="topright",
         baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-        overlayGroups = c("HMS Smoke Plumes","HMS Fires", "PM25 Monitors", 
-                          "CO Monitors", "Ozone Monitors","USFS Reported Fires"),
+        overlayGroups = c("HMS Smoke Plumes","HMS Fires","USFS Reported Fires", 
+                          "PM25 Monitors", "CO Monitors", "Ozone Monitors"),
         options = layersControlOptions(collapsed = FALSE)
-      )
+      ) %>%
+    # Set defualt hidden groups 
+    hideGroup("Ozone Monitors") %>%
+    hideGroup("CO Monitors")
     
-    loading <- "False"
     map
     
 
   })
 
 
-
-  
-  
 })
