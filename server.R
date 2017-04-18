@@ -6,8 +6,17 @@
 # loads "hysplitPoints_land" dataframe
 load("data/hysplitPoints_land_both.RData") 
 load("data/fireOccurrence.RData")
+#load("data/MTBSPolygons.RData")
 
 # TODO: Move the creation of the map outside of of events so it is never redrawn
+# TODO: Learn from the functionality of:
+# https://github.com/rstudio/shiny-examples/blob/master/063-superzip-example/server.R
+
+# TODO: Show time series of AQS monitor for a year upon click. Shade dates
+# TODO: where there is a smoke plume overhead as a different color and label
+# TODO: the date on the point with a mouse over of the plot. Like the movie
+# TODO: explorer app. 
+
 # http://stackoverflow.com/questions/37433569/changing-leaflet-map-according-to-input-without-redrawing
 # THIS ONE: https://rstudio.github.io/leaflet/showhide.html
 # Good for putting items on map https://rstudio.github.io/leaflet/shiny.html
@@ -31,9 +40,18 @@ AQSIcons <- icons(
 # fire  <- 'http://www.ospo.noaa.gov/data/land/fire/fire.kml'
 # smoke <- 'http://www.ospo.noaa.gov/data/land/fire/smoke.kml' 
 
+# TODO: nicely format labels of objects plotted on map
+# PM_content <- as.character(tagList(
+#   tags$h4("Score:", as.integer(selectedZip$centile)),
+#   tags$strong(HTML(sprintf("%s, %s %s",
+#                            selectedZip$city.x, selectedZip$state.x, selectedZip$zipcode
+#   ))), tags$br(),
+#   sprintf("Median household income: %s", dollar(selectedZip$income * 1000)), tags$br(),
+#   sprintf("Percent of adults with BA: %s%%", as.integer(selectedZip$college)), tags$br(),
+#   sprintf("Adult population: %s", selectedZip$adultpop)
+# ))
 
 shinyServer(function(input, output, session) {
-
 
   ######################################
   # Create the map with desired layers 
@@ -55,7 +73,6 @@ shinyServer(function(input, output, session) {
     #mergePlumes <- input$mergePlumes
     yyyymmdd <- str_replace_all(s, "-", "")
     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
-    plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
     smokePoly <- get(load(plumeFile))
     
     ###########################################
@@ -69,6 +86,23 @@ shinyServer(function(input, output, session) {
     hp_df <- hysplitPoints_land[dateMask, ]
     hp_lon <- as.numeric(hp_df$Lon)
     hp_lat <- as.numeric(hp_df$Lat)
+    
+    # ###########################################
+    # # Handle MTBS Polygons
+    # ###########################################
+    # mtbsDates <- MTBSPolygons@data$StartDate
+    # mtbsEnd <- dateSelect + 7*24*60*60
+    # mtbsStart <- dateSelect-7*24*60^2
+    # mtbsDateMask <- mtbsDates >= mtbsStart & mtbsDates <= mtbsEnd
+    # 
+    # sizeMask <- MTBSPolygons@data$Acres >= 500
+    # mtbsPoly <- MTBSPolygons[mtbsDateMask,]
+    # mtbs_df <- mtbsPoly@data
+    
+    # mtbs_content <- as.character(as.character(tagList(tags$h4(mtbs_df$Fire_Name),
+    #                                                   tags$h4("Start Date:",mtbs_df$StartDate), 
+    #                                                   tags$h4("Type:", mtbs_df$FireType),
+    #                                                   tags$h4("Acres:",mtbs_df$Acres))))
     
     ###########################################
     # Handle PM25 Monitors
@@ -146,6 +180,15 @@ shinyServer(function(input, output, session) {
             group="HMS Fires"
             ) %>%
       
+
+      # addPolygons(data=mtbsPoly,
+      #             fillColor="blue",
+      #             group="MTBS",
+      #             label=paste(mtbs_df$Fire_Name, "Start Date:" ,mtbs_df$StartDate,
+      #                         "Type:", mtbs_df$FireType,
+      #                         "Acres:",round(mtbs_df$Acres) )
+      #             ) %>%
+      
       addMarkers(
         layerId="USFSFires",
         lng=fdf$LONGITUDE,
@@ -163,7 +206,7 @@ shinyServer(function(input, output, session) {
         fillOpacity=0.8,
         stroke=FALSE,
         label=paste("PM25 AQI =", PM_df$AQI ,"(",
-                    as.character(PM_df$Arithmetic.Mean), "ug/m2)"),
+                    as.character(PM_df$Arithmetic.Mean), "ug/m2 24-hr mean)"),
         group="PM25 Monitors"
       ) %>%
       
@@ -174,7 +217,8 @@ shinyServer(function(input, output, session) {
         radius=10,
         fillOpacity=0.8,
         stroke=FALSE,
-        label=paste("CO =",as.character(CO_df$Arithmetic.Mean), "ppm"),
+        label=paste("CO AQI =", CO_df$AQI, "(",
+                    as.character(CO_df$Arithmetic.Mean), "ppm 24-hr mean)"),
         group="CO Monitors"
       ) %>%
       
@@ -207,6 +251,47 @@ shinyServer(function(input, output, session) {
     
 
   })
+  
+  plotPaddle <- observeEvent(input$plotPaddle,{
+
+    lon <- as.numeric(input$lon)
+    lat <- as.numeric(input$lat)
+    
+    s <- input$plumeDate
+    yyyymmdd <- str_replace_all(s, "-", "")
+    plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
+    smokePoly <- get(load(plumeFile))
+    smokePoly@proj4string <- CRS(as.character(NA)) # for overlap
+    
+    # Figure out if this location is under a plume
+    point <- SpatialPoints(coords=cbind(lon,lat))
+    test <- over(point, smokePoly)
+
+    # e.g. of "test" when overlapping a plume
+    # ID Start  End Density
+    # 1  0  1100 1300   5.000
+    # e.g. of "test" when not overlapping a plume
+    # ID Start  End Density
+    # 1 NA  <NA> <NA>    <NA>
+    if(is.na(test[1,1])){
+      overlap <- "no plume overhead"
+    } else{
+      overlap <- "plume overhead"
+    }
+    
+
+    leafletProxy(mapId="mymap") %>%
+      # Clear the existing marker
+      clearGroup(group="overlapMarker") %>%
+      # add desired marker
+      addMarkers(lng=lon, lat=lat, label=paste(lon,"," ,lat,":", overlap, ":", s),
+                 icon=icons(iconUrl='https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png',
+                            iconWidth = 20, 
+                            iconHeight = 20),
+                 group="overlapMarker")
+      
+  })
+  
 
 
 })

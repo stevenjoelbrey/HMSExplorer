@@ -3,6 +3,7 @@
 library(shiny)
 library(leaflet)
 library(stringr)
+library(sp)
 
 loading <- "True"
 
@@ -20,7 +21,34 @@ shinyUI(fluidPage(
                           min = "2005-08-05", max = "2015-12-30",
                           format = "yyyy-mm-dd", startview = "month",
                           language = "en",
-                          width=110)
+                          width=110),
+                
+                div(style="display:inline-block",
+                radioButtons(inputId="analysisType", label="Analysis Type", 
+                             choices=c("none", "overlap", "dashboard"), 
+                             selected = "none", inline = TRUE)
+                ),
+                
+
+                # TODO: Make sure conditional on some (location overlap question)
+                conditionalPanel(
+                  
+                  condition = "input.analysisType == 'overlap'",
+                  
+                  bootstrapPage(
+                    div(style="display:inline-block",textInput(inputId="lat", label="lat", value = 41.87898, width=80)),
+                    div(style="display:inline-block",textInput(inputId="lon", label="lon", value = -87.635556, width=80)),
+                    div(style="display:inline-block", actionButton(inputId="plotPaddle", label="show location", width=110))
+                  )
+                ),
+                
+                conditionalPanel(
+                  
+                  condition = "input.analysisType == 'dashboard'",
+                    h4("detailed monitor analysis under development")
+
+                )
+                
   ),
 
   absolutePanel(bottom=100,
@@ -37,8 +65,10 @@ shinyUI(fluidPage(
                       href="http://www.ospo.noaa.gov/Products/land/hms.html"),
                tags$a("EPA monitor data |", 
                       href="http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html"),
-               tags$a("Reported Fires Data", 
+               tags$a("Reported Fires Data |", 
                       href="https://www.fs.usda.gov/rds/archive/Product/RDS-2013-0009.3/"),
+               tags$a("Current Conditions from AirNow.gov", 
+                      href="https://airnow.gov/index.cfm?action=topics.smoke_wildfires"),
                
                p("If you find bugs or have questions, please contact me via the link above"),
                h5(textOutput("counter")),
