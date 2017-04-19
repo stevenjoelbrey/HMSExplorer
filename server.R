@@ -17,6 +17,9 @@ load("data/fireOccurrence.RData")
 # TODO: the date on the point with a mouse over of the plot. Like the movie
 # TODO: explorer app. 
 
+# TODO: make making multiyear, slider for range of years, rbind year AQS files
+# TODO: so you are not loading more data than is needed?
+
 # http://stackoverflow.com/questions/37433569/changing-leaflet-map-according-to-input-without-redrawing
 # THIS ONE: https://rstudio.github.io/leaflet/showhide.html
 # Good for putting items on map https://rstudio.github.io/leaflet/shiny.html
@@ -36,6 +39,8 @@ AQSIcons <- icons(
   
 )
 
+
+
 # # Present day analysis 
 # fire  <- 'http://www.ospo.noaa.gov/data/land/fire/fire.kml'
 # smoke <- 'http://www.ospo.noaa.gov/data/land/fire/smoke.kml' 
@@ -53,10 +58,39 @@ AQSIcons <- icons(
 
 shinyServer(function(input, output, session) {
 
-  ######################################
-  # Create the map with desired layers 
-  ######################################
-  output$mymap <- renderLeaflet({
+  ########################################################
+  # Create the map, happens once, does not depend on date
+  ########################################################
+  output$map <- renderLeaflet({
+  
+    map <- leaflet() %>%
+    
+    setView(lng=-100, lat=40, zoom=4) %>%
+    addScaleBar(position="bottomright") %>%
+    
+    # Base groups
+    addTiles(group = "OSM (default)") %>%
+    addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+  
+    # Layers control
+    addLayersControl(
+      position="topright",
+      baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+      overlayGroups = c("HMS Smoke Plumes","HMS Fires","USFS Reported Fires", 
+                        "PM25 Monitors", "CO Monitors", "Ozone Monitors"),
+      options = layersControlOptions(collapsed = FALSE)
+    ) %>%
+      
+    # Set defualt hidden groups 
+    hideGroup("Ozone Monitors") %>%
+    hideGroup("CO Monitors")
+    
+    map
+    
+  })
+  
+  observeEvent(input$plumeDate,{
     
     # Give user progress message while page loads 
     progress <- Progress$new(session, min=5, max=15)
@@ -65,12 +99,10 @@ shinyServer(function(input, output, session) {
     progress$set(message = 'Loading Maps. ',
                  detail = 'This may take a moment...')
     
-    
     ###########################################
     # Get the desired smoke plumes for plotting
     ###########################################
     s <- input$plumeDate
-    #mergePlumes <- input$mergePlumes
     yyyymmdd <- str_replace_all(s, "-", "")
     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
     smokePoly <- get(load(plumeFile))
@@ -86,23 +118,6 @@ shinyServer(function(input, output, session) {
     hp_df <- hysplitPoints_land[dateMask, ]
     hp_lon <- as.numeric(hp_df$Lon)
     hp_lat <- as.numeric(hp_df$Lat)
-    
-    # ###########################################
-    # # Handle MTBS Polygons
-    # ###########################################
-    # mtbsDates <- MTBSPolygons@data$StartDate
-    # mtbsEnd <- dateSelect + 7*24*60*60
-    # mtbsStart <- dateSelect-7*24*60^2
-    # mtbsDateMask <- mtbsDates >= mtbsStart & mtbsDates <= mtbsEnd
-    # 
-    # sizeMask <- MTBSPolygons@data$Acres >= 500
-    # mtbsPoly <- MTBSPolygons[mtbsDateMask,]
-    # mtbs_df <- mtbsPoly@data
-    
-    # mtbs_content <- as.character(as.character(tagList(tags$h4(mtbs_df$Fire_Name),
-    #                                                   tags$h4("Start Date:",mtbs_df$StartDate), 
-    #                                                   tags$h4("Type:", mtbs_df$FireType),
-    #                                                   tags$h4("Acres:",mtbs_df$Acres))))
     
     ###########################################
     # Handle PM25 Monitors
@@ -154,16 +169,14 @@ shinyServer(function(input, output, session) {
     ###########################################
     # Create map layers and toggles
     ###########################################
-    map <- leaflet(smokePoly) %>%
+    leafletProxy(mapId="map") %>%
       
-      setView(lng=-100, lat=40, zoom=4) %>%
-      addScaleBar(position="bottomright") %>%
-      
-      # Base groups
-      addTiles(group = "OSM (default)") %>%
-      addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
-      addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
-      
+      # Before handling new plumes and markers clear existing since they are
+      # all date dependent
+      clearMarkers() %>%
+      clearMarkerClusters() %>%
+      clearGroup(group="HMS Smoke Plumes") %>%
+    
       # Overlay groups
       addPolygons(data = smokePoly, fillColor="gray47", color="gray47", 
                   group="HMS Smoke Plumes") %>%
@@ -179,15 +192,6 @@ shinyServer(function(input, output, session) {
                          "hrs"),
             group="HMS Fires"
             ) %>%
-      
-
-      # addPolygons(data=mtbsPoly,
-      #             fillColor="blue",
-      #             group="MTBS",
-      #             label=paste(mtbs_df$Fire_Name, "Start Date:" ,mtbs_df$StartDate,
-      #                         "Type:", mtbs_df$FireType,
-      #                         "Acres:",round(mtbs_df$Acres) )
-      #             ) %>%
       
       addMarkers(
         layerId="USFSFires",
@@ -205,8 +209,11 @@ shinyServer(function(input, output, session) {
         radius=8,
         fillOpacity=0.8,
         stroke=FALSE,
-        label=paste("PM25 AQI =", PM_df$AQI ,"(",
-                    as.character(PM_df$Arithmetic.Mean), "ug/m2 24-hr mean)"),
+        label="PM2.5",
+        popup=paste("<b>", "Unique ID:","</b>", PM_df$ID,"<br>", 
+                    "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
+                    "<b>", "ug/m2 24-hr mean:","</b>", PM_df$Arithmetic.Mean
+                    ),
         group="PM25 Monitors"
       ) %>%
       
@@ -217,8 +224,11 @@ shinyServer(function(input, output, session) {
         radius=10,
         fillOpacity=0.8,
         stroke=FALSE,
-        label=paste("CO AQI =", CO_df$AQI, "(",
-                    as.character(CO_df$Arithmetic.Mean), "ppm 24-hr mean)"),
+        label="CO",
+        popup=paste("<b>", "Unique ID:","</b>", CO_df$ID,"<br>", 
+                    "<b>","CO AQI:", "</b>", CO_df$AQI, "<br>",
+                    "<b>", "ppm 24-hr mean:","</b>", CO_df$Arithmetic.Mean
+        ),
         group="CO Monitors"
       ) %>%
       
@@ -229,29 +239,18 @@ shinyServer(function(input, output, session) {
         radius=6,
         fillOpacity=0.8,
         stroke=FALSE,
-        label=paste("O3 AQI =", as.character(ozone_df$AQI), "(MDA8 =",
-                    as.character(ozone_df$X1st.Max.Value * 1000), "ppb)"),
+        label="O3",
+        popup=paste("<b>", "Unique ID:","</b>", ozone_df$ID,"<br>", 
+                    "<b>","Ozone AQI:", "</b>", ozone_df$AQI, "<br>",
+                    "<b>", "MDA8:","</b>", ozone_df$X1st.Max.Value * 1000
+        ),
         group="Ozone Monitors"
         
-      ) %>%
-      
-      # Layers control
-      addLayersControl(
-        position="topright",
-        baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-        overlayGroups = c("HMS Smoke Plumes","HMS Fires","USFS Reported Fires", 
-                          "PM25 Monitors", "CO Monitors", "Ozone Monitors"),
-        options = layersControlOptions(collapsed = FALSE)
-      ) %>%
-    # Set defualt hidden groups 
-    hideGroup("Ozone Monitors") %>%
-    hideGroup("CO Monitors")
-    
-    map
-    
+      ) 
 
   })
   
+  # Handle overlap analysis
   plotPaddle <- observeEvent(input$plotPaddle,{
 
     lon <- as.numeric(input$lon)
@@ -280,7 +279,7 @@ shinyServer(function(input, output, session) {
     }
     
 
-    leafletProxy(mapId="mymap") %>%
+    leafletProxy(mapId="map") %>%
       # Clear the existing marker
       clearGroup(group="overlapMarker") %>%
       # add desired marker

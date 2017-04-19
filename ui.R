@@ -9,7 +9,7 @@ loading <- "True"
 
 shinyUI(fluidPage(
 
-  headerPanel("Smoke Impact Explorer"),
+  headerPanel("Smoke Impact Explorer (beta)"),
  
   # conditionalPanel(condition = "loading== 'True'",
   #                  img="ajax_loader_blue_512.gif"),

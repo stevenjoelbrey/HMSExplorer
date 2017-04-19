@@ -11,6 +11,20 @@
 # Author: Steven Brey
 ########################################################################
 
+library(stringr)
+
+# Functions for placing leading zeros to make s of length L
+pasteZero <- function(s, L){
+  for (i in 1:length(s)){
+    s[i] <- as.character(s[i])
+    while(str_length(s[i]) < L){
+      s[i] <- paste0("0",s[i])
+    }
+  }
+  return(s)
+}
+
+
 # PM25 = daily_88101
 # CO = daily_42101
 # ozone = daily_44201
@@ -19,8 +33,8 @@
 desiredColumns <- c("Latitude", "Longitude", "Date.Local", 
                     "Arithmetic.Mean", "X1st.Max.Value","AQI")
 
-species  <- "daily_44201"
-saveName <- "ozone"
+species  <- "daily_88101"
+saveName <- "PM25"
 fileDir  <- paste0("developmentData/")
 saveFileDir <- paste0("data/AQS/", saveName, "/")
 
@@ -34,7 +48,17 @@ for (i in 1:length(years)){
   df <- read.csv( paste0(fileDir, f) , stringsAsFactors = FALSE)
   colMask <- names(df) %in% desiredColumns 
   
+  # Give data unique ID 
+  stateCode <- pasteZero(df$State.Code, 2)
+  CountyCode <- pasteZero(df$County.Code, 3)
+  SiteNum   <- pasteZero(df$Site.Num, 4)
+  ParameterCode <- df$Parameter.Code
+  POC <- pasteZero(df$POC, 2)
+  ID <- paste0(stateCode, CountyCode, SiteNum, ParameterCode, POC)
+  
+  # Subset the data
   df_subset <- df[, colMask]
+  df_subset$ID <- ID
   
   # Replace date string with POSIXct format for easy subsetting in app
   DATE <- as.POSIXct(df_subset$Date.Local, tz="UTC")
