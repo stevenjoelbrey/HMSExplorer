@@ -14,7 +14,7 @@ shinyUI(fluidPage(
   # conditionalPanel(condition = "loading== 'True'",
   #                  img="ajax_loader_blue_512.gif"),
   
-  leafletOutput("mymap" , width = "100%", height = 700),
+  leafletOutput("map" , width = "100%", height = 700),
   absolutePanel(top = 70, left = 70,
                 dateInput(inputId="plumeDate", label="Analysis Date",
                           value = "2012-06-13",
@@ -45,8 +45,15 @@ shinyUI(fluidPage(
                 conditionalPanel(
                   
                   condition = "input.analysisType == 'dashboard'",
-                    h4("detailed monitor analysis under development")
-
+                  h4("Under Development")
+                  # dateRangeInput(inputId="plotTimeRange", label="Plot Time Range", 
+                  #                start = "2005-08-05", end = "2015-12-30", 
+                  #                min = "2005-08-05",max = "2015-12-30", 
+                  #                format = "yyyy-mm-dd", startview = "year", 
+                  #                weekstart = 0,
+                  #                language = "en", separator = " to ")
+                  
+             
                 )
                 
   ),
