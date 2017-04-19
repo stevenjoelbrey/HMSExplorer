@@ -4,6 +4,7 @@ library(shiny)
 library(leaflet)
 library(stringr)
 library(sp)
+library(plotly)
 
 loading <- "True"
 
@@ -45,7 +46,8 @@ shinyUI(fluidPage(
                 conditionalPanel(
                   
                   condition = "input.analysisType == 'dashboard'",
-                  h4("Under Development")
+                  #h4("Under development")
+                  plotOutput("seriesPlot") 
                   # dateRangeInput(inputId="plotTimeRange", label="Plot Time Range", 
                   #                start = "2005-08-05", end = "2015-12-30", 
                   #                min = "2005-08-05",max = "2015-12-30", 

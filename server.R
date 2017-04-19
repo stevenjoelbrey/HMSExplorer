@@ -8,6 +8,8 @@ load("data/hysplitPoints_land_both.RData")
 load("data/fireOccurrence.RData")
 #load("data/MTBSPolygons.RData")
 
+# Possible solution to what jeff wants for plot: http://stackoverflow.com/questions/41645273/r-shiny-sankey-plot-with-click-events
+
 # TODO: Move the creation of the map outside of of events so it is never redrawn
 # TODO: Learn from the functionality of:
 # https://github.com/rstudio/shiny-examples/blob/master/063-superzip-example/server.R
@@ -91,14 +93,14 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$plumeDate,{
-    
-    # Give user progress message while page loads 
+
+    # Give user progress message while page loads
     progress <- Progress$new(session, min=5, max=15)
     on.exit(progress$close())
-    
+
     progress$set(message = 'Loading Maps. ',
                  detail = 'This may take a moment...')
-    
+
     ###########################################
     # Get the desired smoke plumes for plotting
     ###########################################
@@ -106,81 +108,81 @@ shinyServer(function(input, output, session) {
     yyyymmdd <- str_replace_all(s, "-", "")
     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
     smokePoly <- get(load(plumeFile))
-    
+
     ###########################################
     # Handle HYSPLIT Points (hp)
     ###########################################
     dateSelect <- as.POSIXct(yyyymmdd, format="%Y%m%d", tz="UTC")
     hpDates    <- hysplitPoints_land$Date
     dateMask   <- hpDates == dateSelect
-    
+
     # subset to selected date only
     hp_df <- hysplitPoints_land[dateMask, ]
     hp_lon <- as.numeric(hp_df$Lon)
     hp_lat <- as.numeric(hp_df$Lat)
-    
+
     ###########################################
     # Handle PM25 Monitors
     ###########################################
     year <- str_sub(yyyymmdd,1,4)
     monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
     load(monitorFile) # loads "AQ_df" of class dataframe
-    
+
     # subset to this date and get rid of NA AQI
     dateMask <- AQ_df$Date.Local == dateSelect
     missingAQIMask <- !is.na(AQ_df$AQI)
     PM_df    <- AQ_df[dateMask & missingAQIMask,]
-    
+
     ###########################################
-    # Handle CO Monitors 
+    # Handle CO Monitors
     ###########################################
     year <- str_sub(yyyymmdd,1,4)
     monitorFile <- paste0("data/AQS/CO/CO_",year,".RData")
     load(monitorFile) # loads "AQ_df" of class dataframe
-    
+
     # subset to this date and get rid of NA AQI
     dateMask <- AQ_df$Date.Local == dateSelect
     missingAQIMask <- !is.na(AQ_df$AQI)
     CO_df    <- AQ_df[dateMask & missingAQIMask,]
-    
+
     ###########################################
-    # Handle Ozone Monitors 
+    # Handle Ozone Monitors
     ###########################################
     monitorFile <- paste0("data/AQS/ozone/ozone_",year,".RData")
     load(monitorFile) # loads "AQ_df" of class dataframe
-    
+
     # subset to this date and get rid of NA AQI
     dateMask <- AQ_df$Date.Local == dateSelect
     missingAQIMask <- !is.na(AQ_df$AQI)
     ozone_df    <- AQ_df[dateMask & missingAQIMask,]
-    
+
     ###########################################
     # Handle USFS Fires
     ###########################################
     fireStart <- fire_data$DISCOVERY_DATE
     fireEnd   <- fire_data$CONT_DATE
-    
+
     # fdf = fireDataFrame
-    m1 <- dateSelect >= fireStart 
+    m1 <- dateSelect >= fireStart
     m2 <- dateSelect <= fireEnd
     dateMask  <- m1 & m2
     fdf <- fire_data[dateMask,]
-    
+
     ###########################################
     # Create map layers and toggles
     ###########################################
     leafletProxy(mapId="map") %>%
-      
+
       # Before handling new plumes and markers clear existing since they are
       # all date dependent
       clearMarkers() %>%
       clearMarkerClusters() %>%
       clearGroup(group="HMS Smoke Plumes") %>%
-    
+
       # Overlay groups
-      addPolygons(data = smokePoly, fillColor="gray47", color="gray47", 
+      addPolygons(data = smokePoly, fillColor="gray47", color="gray47",
                   group="HMS Smoke Plumes") %>%
-      
+
       addMarkers(
             lng=hp_lon,
             lat=hp_lat,
@@ -192,7 +194,7 @@ shinyServer(function(input, output, session) {
                          "hrs"),
             group="HMS Fires"
             ) %>%
-      
+
       addMarkers(
         layerId="USFSFires",
         lng=fdf$LONGITUDE,
@@ -201,8 +203,9 @@ shinyServer(function(input, output, session) {
         label= paste(fdf$FIRE_NAME,", \n cuase:",fdf$STAT_CAUSE_DESCR),
         group="USFS Reported Fires"
       ) %>%
-      
+
       addCircleMarkers(
+        layerId=PM_df$ID,
         lng=PM_df$Longitude,
         lat=PM_df$Latitude,
         color=PM_df$AQIColor,
@@ -210,13 +213,13 @@ shinyServer(function(input, output, session) {
         fillOpacity=0.8,
         stroke=FALSE,
         label="PM2.5",
-        popup=paste("<b>", "Unique ID:","</b>", PM_df$ID,"<br>", 
+        popup=paste("<b>", "Unique ID:","</b>", PM_df$ID,"<br>",
                     "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
                     "<b>", "ug/m2 24-hr mean:","</b>", PM_df$Arithmetic.Mean
                     ),
         group="PM25 Monitors"
       ) %>%
-      
+
       addCircleMarkers(
         lng=CO_df$Longitude,
         lat=CO_df$Latitude,
@@ -225,13 +228,13 @@ shinyServer(function(input, output, session) {
         fillOpacity=0.8,
         stroke=FALSE,
         label="CO",
-        popup=paste("<b>", "Unique ID:","</b>", CO_df$ID,"<br>", 
+        popup=paste("<b>", "Unique ID:","</b>", CO_df$ID,"<br>",
                     "<b>","CO AQI:", "</b>", CO_df$AQI, "<br>",
                     "<b>", "ppm 24-hr mean:","</b>", CO_df$Arithmetic.Mean
         ),
         group="CO Monitors"
       ) %>%
-      
+
       addCircleMarkers(
         lng=ozone_df$Longitude,
         lat=ozone_df$Latitude,
@@ -240,13 +243,13 @@ shinyServer(function(input, output, session) {
         fillOpacity=0.8,
         stroke=FALSE,
         label="O3",
-        popup=paste("<b>", "Unique ID:","</b>", ozone_df$ID,"<br>", 
+        popup=paste("<b>", "Unique ID:","</b>", ozone_df$ID,"<br>",
                     "<b>","Ozone AQI:", "</b>", ozone_df$AQI, "<br>",
                     "<b>", "MDA8:","</b>", ozone_df$X1st.Max.Value * 1000
         ),
         group="Ozone Monitors"
-        
-      ) 
+
+      )
 
   })
   
@@ -291,6 +294,66 @@ shinyServer(function(input, output, session) {
       
   })
   
+  # Handle getting data from marker click
+  data <- reactiveValues(clickedMarker=NULL)
 
+  # observe the marker click info and print to console when it is changed.
+  observeEvent(input$map_marker_click,{
+
+    data$clickedMarker <- input$map_marker_click
+    print(data$clickedMarker)
+    
+    selectID <- data$clickedMarker$id
+    print(paste("ID clicked:", selectID))
+    
+    selectGroup <- data$clickedMarker$group
+    print(paste("Selected Group:", selectGroup))
+    
+    # Based on group and year, load yearly file and plot the data
+    year <- str_sub(input$plumeDate,1,4)
+    if (selectGroup == "PM25 Monitors"){
+      monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
+      ylab <- "ug/m2"
+    } else{
+      print('unknown monitor group. No plotting available.')
+    }
+    
+    AQ_df  <- get(load(monitorFile))
+    print(paste("Class AQ_df:", class(AQ_df)))
+    
+    IDMask <- selectID == AQ_df$ID
+    AQ_df  <- AQ_df[IDMask,]
+    
+    print(names(AQ_df))
+    print(dim(AQ_df))
+    
+    # # Make the interactive html plot from plotly
+    # plot_ly(AQ_df, type='scatter',
+    #         x = ~Date.Local, y = ~Arithmetic.Mean, color = ~AQI,
+    #         text = ~paste("Date:", Date.Local),
+    #         xlim=c(min(AQ_df$Date.Local)), max(AQ_df$Date.Local))
+    
+    output$seriesPlot <- renderPlot({
+      
+      plot(AQ_df$Date.Local, AQ_df$Arithmetic.Mean,
+           las=1,
+           xlab="date", ylab=ylab,
+           col=AQ_df$AQIColor, 
+           pch=19,
+           bty="n",
+           main=selectID)
+      
+    }
+   )
+   print("the plot has been made")
+
+    
+  })
+  
+  # This clears the marker data when the map is clicked. Do not hold on to 
+  # outdated information 
+  observeEvent(input$map_click,{
+    data$clickedMarker <- NULL
+    print(data$clickedMarker)})
 
 })
