@@ -215,12 +215,14 @@ shinyServer(function(input, output, session) {
         label="PM2.5",
         popup=paste("<b>", "Unique ID:","</b>", PM_df$ID,"<br>",
                     "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
+                    "<b>","Date:", "</b>", PM_df$Date.Local, "<br>",
                     "<b>", "ug/m2 24-hr mean:","</b>", PM_df$Arithmetic.Mean
                     ),
         group="PM25 Monitors"
       ) %>%
 
       addCircleMarkers(
+        layerId=CO_df$ID,
         lng=CO_df$Longitude,
         lat=CO_df$Latitude,
         color=CO_df$AQIColor,
@@ -230,12 +232,14 @@ shinyServer(function(input, output, session) {
         label="CO",
         popup=paste("<b>", "Unique ID:","</b>", CO_df$ID,"<br>",
                     "<b>","CO AQI:", "</b>", CO_df$AQI, "<br>",
+                    "<b>","Date:", "</b>", CO_df$Date.Local, "<br>",
                     "<b>", "ppm 24-hr mean:","</b>", CO_df$Arithmetic.Mean
         ),
         group="CO Monitors"
       ) %>%
 
       addCircleMarkers(
+        layerId=ozone_df$ID,
         lng=ozone_df$Longitude,
         lat=ozone_df$Latitude,
         color=ozone_df$AQIColor,
@@ -245,6 +249,7 @@ shinyServer(function(input, output, session) {
         label="O3",
         popup=paste("<b>", "Unique ID:","</b>", ozone_df$ID,"<br>",
                     "<b>","Ozone AQI:", "</b>", ozone_df$AQI, "<br>",
+                    "<b>","Date:", "</b>", ozone_df$Date.Local, "<br>",
                     "<b>", "MDA8:","</b>", ozone_df$X1st.Max.Value * 1000
         ),
         group="Ozone Monitors"
@@ -297,55 +302,84 @@ shinyServer(function(input, output, session) {
   # Handle getting data from marker click
   data <- reactiveValues(clickedMarker=NULL)
 
+  ##############################################################################
   # observe the marker click info and print to console when it is changed.
+  ##############################################################################
   observeEvent(input$map_marker_click,{
 
     data$clickedMarker <- input$map_marker_click
-    print(data$clickedMarker)
+    #print(data$clickedMarker)
     
     selectID <- data$clickedMarker$id
-    print(paste("ID clicked:", selectID))
+    #print(paste("ID clicked:", selectID))
     
     selectGroup <- data$clickedMarker$group
-    print(paste("Selected Group:", selectGroup))
+    #print(paste("Selected Group:", selectGroup))
     
-    # Based on group and year, load yearly file and plot the data
-    year <- str_sub(input$plumeDate,1,4)
-    if (selectGroup == "PM25 Monitors"){
-      monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
-      ylab <- "ug/m2"
-    } else{
-      print('unknown monitor group. No plotting available.')
-    }
+    # Only react to air quality data clicks
+    # TODO: handle this with a different map_marker_click reaction?
+    if(selectGroup == "PM25 Monitors" | 
+       selectGroup == "CO Monitors" |
+       selectGroup == "Ozone Monitors"){
     
-    AQ_df  <- get(load(monitorFile))
-    print(paste("Class AQ_df:", class(AQ_df)))
-    
-    IDMask <- selectID == AQ_df$ID
-    AQ_df  <- AQ_df[IDMask,]
-    
-    print(names(AQ_df))
-    print(dim(AQ_df))
-    
-    # # Make the interactive html plot from plotly
-    # plot_ly(AQ_df, type='scatter',
-    #         x = ~Date.Local, y = ~Arithmetic.Mean, color = ~AQI,
-    #         text = ~paste("Date:", Date.Local),
-    #         xlim=c(min(AQ_df$Date.Local)), max(AQ_df$Date.Local))
-    
-    output$seriesPlot <- renderPlot({
       
-      plot(AQ_df$Date.Local, AQ_df$Arithmetic.Mean,
-           las=1,
-           xlab="date", ylab=ylab,
-           col=AQ_df$AQIColor, 
-           pch=19,
-           bty="n",
-           main=selectID)
+      # Based on group and year, load yearly file and plot the data
+      year <- str_sub(input$plumeDate,1,4)
+      if (selectGroup == "PM25 Monitors"){
+        
+        monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
+        ylab <- "ug/m2"
+        columnSelect <- "Arithmetic.Mean"
+        
+      } else if(selectGroup == "CO Monitors"){
+        
+        monitorFile <- paste0("data/AQS/CO/CO_",year,".RData")
+        ylab <- "ppm" 
+        columnSelect <- "Arithmetic.Mean"
+        
+      } else if(selectGroup == "Ozone Monitors"){
+        
+        monitorFile <- paste0("data/AQS/ozone/ozone_",year,".RData")
+        ylab <- "MDA8 [ppm]" 
+        columnSelect <- "X1st.Max.Value"
+        
+      }
       
-    }
-   )
-   print("the plot has been made")
+      #print(monitorFile)
+      
+      AQ_df  <- get(load(monitorFile))
+      #print(paste("Class AQ_df:", class(AQ_df)))
+      
+      IDMask <- selectID == AQ_df$ID
+      AQ_df  <- AQ_df[IDMask,]
+      
+      #print(names(AQ_df))
+      #print(dim(AQ_df))
+      
+      # # Make the interactive html plot from plotly
+      # plot_ly(AQ_df, type='scatter',
+      #         x = ~Date.Local, y = ~Arithmetic.Mean, color = ~AQI,
+      #         text = ~paste("Date:", Date.Local),
+      #         xlim=c(min(AQ_df$Date.Local)), max(AQ_df$Date.Local))
+      
+      output$seriesPlot <- renderPlot({
+        
+        MEAN <- round(mean(AQ_df[[columnSelect]]),3)
+        
+        plot(AQ_df$Date.Local, AQ_df[[columnSelect]],
+             las=1,
+             xlab="", ylab=ylab,
+             col=AQ_df$AQIColor, 
+             pch=19,
+             bty="n",
+             main=paste("ID:", selectID, "\n",
+                        "Plotted mean:", MEAN),
+             bg = 'transparent',
+             cex.axis=1.7)
+        
+      }
+     )
+  }
 
     
   })

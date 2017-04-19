@@ -12,11 +12,10 @@ shinyUI(fluidPage(
 
   headerPanel("Smoke Impact Explorer (beta)"),
  
-  # conditionalPanel(condition = "loading== 'True'",
-  #                  img="ajax_loader_blue_512.gif"),
-  
+ 
   leafletOutput("map" , width = "100%", height = 700),
-  absolutePanel(top = 70, left = 70,
+  absolutePanel(top = 70, left = 70, width="400px",
+                
                 dateInput(inputId="plumeDate", label="Analysis Date",
                           value = "2012-06-13",
                           min = "2005-08-05", max = "2015-12-30",
@@ -26,7 +25,7 @@ shinyUI(fluidPage(
                 
                 div(style="display:inline-block",
                 radioButtons(inputId="analysisType", label="Analysis Type", 
-                             choices=c("none", "overlap", "dashboard"), 
+                             choices=c("none", "overlap", "time series"), 
                              selected = "none", inline = TRUE)
                 ),
                 
@@ -45,9 +44,9 @@ shinyUI(fluidPage(
                 
                 conditionalPanel(
                   
-                  condition = "input.analysisType == 'dashboard'",
+                  condition = "input.analysisType == 'time series'",
                   #h4("Under development")
-                  plotOutput("seriesPlot") 
+                  plotOutput("seriesPlot", width="100%") 
                   # dateRangeInput(inputId="plotTimeRange", label="Plot Time Range", 
                   #                start = "2005-08-05", end = "2015-12-30", 
                   #                min = "2005-08-05",max = "2015-12-30", 
@@ -61,7 +60,7 @@ shinyUI(fluidPage(
   ),
 
   absolutePanel(bottom=100,
-      img(src="aqi_legend.png", align = "left", width=150)
+      img(src="aqi_legend.png", align = "right", width=150)
   ),
 
   absolutePanel(bottom=0, left=20,
