@@ -12,25 +12,25 @@ shinyUI(fluidPage(
 
   headerPanel("Smoke Impact Explorer (beta)"),
  
- 
   leafletOutput("map" , width = "100%", height = 700),
+  
   absolutePanel(top = 70, left = 70, width="400px",
                 
-                dateInput(inputId="plumeDate", label="Analysis Date",
+                dateInput(inputId="plumeDate", label="Mapped Date",
                           value = "2012-06-13",
                           min = "2005-08-05", max = "2015-12-30",
                           format = "yyyy-mm-dd", startview = "month",
                           language = "en",
                           width=110),
                 
-                div(style="display:inline-block",
-                radioButtons(inputId="analysisType", label="Analysis Type", 
-                             choices=c("none", "overlap", "time series"), 
-                             selected = "none", inline = TRUE)
-                ),
-                
+                selectInput(inputId="analysisType", label="Analysis Type",
+                            choices= c("none", "overlap", "AQI series", 
+                                       "html scatter"),
+                            selected="none",
+                            width=110
+                            ),
 
-                # TODO: Make sure conditional on some (location overlap question)
+                # Show certain overlap tools 
                 conditionalPanel(
                   
                   condition = "input.analysisType == 'overlap'",
@@ -40,26 +40,27 @@ shinyUI(fluidPage(
                     div(style="display:inline-block",textInput(inputId="lon", label="lon", value = -87.635556, width=80)),
                     div(style="display:inline-block", actionButton(inputId="plotPaddle", label="show location", width=110))
                   )
+                
+                ),
+                
+                # Show time series plot when selected 
+                conditionalPanel(
+                  
+                  condition = "input.analysisType == 'AQI series'",
+                  plotOutput("seriesPlot", width="100%") 
+             
                 ),
                 
                 conditionalPanel(
-                  
-                  condition = "input.analysisType == 'time series'",
-                  #h4("Under development")
-                  plotOutput("seriesPlot", width="100%") 
-                  # dateRangeInput(inputId="plotTimeRange", label="Plot Time Range", 
-                  #                start = "2005-08-05", end = "2015-12-30", 
-                  #                min = "2005-08-05",max = "2015-12-30", 
-                  #                format = "yyyy-mm-dd", startview = "year", 
-                  #                weekstart = 0,
-                  #                language = "en", separator = " to ")
-                  
-             
+                  condition = "input.analysisType == 'html scatter'",
+                  plotlyOutput("scatter", width="100%") 
                 )
+               
+                
                 
   ),
 
-  absolutePanel(bottom=100,
+  absolutePanel(bottom=100, right=20,
       img(src="aqi_legend.png", align = "right", width=150)
   ),
 
