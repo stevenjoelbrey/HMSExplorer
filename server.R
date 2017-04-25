@@ -1,3 +1,11 @@
+################################################################################
+# Special thanks to the folliwng for help. 
+################################################################################
+# http://stackoverflow.com/questions/41645273/r-shiny-sankey-plot-with-click-events
+# https://github.com/rstudio/shiny-examples/blob/master/063-superzip-example/server.R
+# http://stackoverflow.com/questions/37433569/changing-leaflet-map-according-to-input-without-redrawing
+# https://rstudio.github.io/leaflet/showhide.html
+# https://rstudio.github.io/leaflet/shiny.html
 
 ################################################################################
 # Handle done once operations 
@@ -8,26 +16,10 @@ load("data/hysplitPoints_land_both.RData")
 load("data/fireOccurrence.RData")
 #load("data/MTBSPolygons.RData")
 
-# Possible solution to what jeff wants for plot: http://stackoverflow.com/questions/41645273/r-shiny-sankey-plot-with-click-events
-
-# TODO: Move the creation of the map outside of of events so it is never redrawn
-# TODO: Learn from the functionality of:
-# https://github.com/rstudio/shiny-examples/blob/master/063-superzip-example/server.R
-
-# TODO: Show time series of AQS monitor for a year upon click. Shade dates
-# TODO: where there is a smoke plume overhead as a different color and label
-# TODO: the date on the point with a mouse over of the plot. Like the movie
-# TODO: explorer app. 
-
-# TODO: make making multiyear, slider for range of years, rbind year AQS files
-# TODO: so you are not loading more data than is needed?
-
-# http://stackoverflow.com/questions/37433569/changing-leaflet-map-according-to-input-without-redrawing
-# THIS ONE: https://rstudio.github.io/leaflet/showhide.html
-# Good for putting items on map https://rstudio.github.io/leaflet/shiny.html
-
+################################################################################
 # Connect to a fire png logo and make small enough that plotting on map looks 
 # nice
+################################################################################
 fireIcons <- icons(
   iconUrl = "http://thediscipleproject.net/wp-content/uploads/2013/07/fire-vector.png",
   iconWidth = 20, 
@@ -41,22 +33,9 @@ AQSIcons <- icons(
   
 )
 
-
-
-# # Present day analysis 
+# TODO: Present day analysis 
 # fire  <- 'http://www.ospo.noaa.gov/data/land/fire/fire.kml'
 # smoke <- 'http://www.ospo.noaa.gov/data/land/fire/smoke.kml' 
-
-# TODO: nicely format labels of objects plotted on map
-# PM_content <- as.character(tagList(
-#   tags$h4("Score:", as.integer(selectedZip$centile)),
-#   tags$strong(HTML(sprintf("%s, %s %s",
-#                            selectedZip$city.x, selectedZip$state.x, selectedZip$zipcode
-#   ))), tags$br(),
-#   sprintf("Median household income: %s", dollar(selectedZip$income * 1000)), tags$br(),
-#   sprintf("Percent of adults with BA: %s%%", as.integer(selectedZip$college)), tags$br(),
-#   sprintf("Adult population: %s", selectedZip$adultpop)
-# ))
 
 shinyServer(function(input, output, session) {
   
@@ -184,6 +163,7 @@ shinyServer(function(input, output, session) {
                   group="HMS Smoke Plumes") %>%
       
       addMarkers(
+        layerId=1:length(hp_lat),
         lng=hp_lon,
         lat=hp_lat,
         clusterOptions = markerClusterOptions(),
@@ -200,7 +180,8 @@ shinyServer(function(input, output, session) {
         lng=fdf$LONGITUDE,
         lat=fdf$LATITUDE,
         clusterOptions = markerClusterOptions(),
-        label= paste(fdf$FIRE_NAME,", \n cuase:",fdf$STAT_CAUSE_DESCR),
+        label= paste(fdf$FIRE_NAME,", \n cause:",fdf$STAT_CAUSE_DESCR, 
+                     ", acres:", fdf$FIRE_SIZE),
         group="USFS Reported Fires"
       ) %>%
       
@@ -359,7 +340,7 @@ shinyServer(function(input, output, session) {
              pch=19,
              bty="n",
              main=paste("ID:", selectID, "\n",
-                        "Plotted mean:", MEAN),
+                        year,"mean:", MEAN),
              bg = 'transparent',
              cex.axis=1.4)
         mtext(ylab, side=2, line=3.5)
@@ -368,7 +349,15 @@ shinyServer(function(input, output, session) {
       })
       
       output$scatter <- renderPlotly({
+        
+        # pal <- c("#00DC21","#FFFA23", "#FF8203", "#FF3100", "#924A96",
+        #               "#841422")
+        # 
+        # pal <- setNames(pal, c("#00DC21","#FFFA23", "#FF8203", "#FF3100", "#924A96",
+        #                        "#841422"))
+        
         plot_ly(AQ_df, x = ~Date.Local, y = AQ_df[[columnSelect]]) 
+                #color = ~AQIColor, colors=pal) 
       })
       
     }
