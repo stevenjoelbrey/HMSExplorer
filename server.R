@@ -12,7 +12,7 @@
 ################################################################################
 
 load("data/hysplitPoints_land_both.RData") 
-load("data/fireOccurrence.RData")
+load("data/fireOccurrence_Wpop.RData")
 load("data/MTBSPolygons.RData")
 load("data/modis.RData")
 
@@ -80,7 +80,7 @@ shinyServer(function(input, output, session) {
       hideGroup("CO Monitors") %>%
       hideGroup("MTBS") %>%
       
-      addLegend(position="bottomleft",
+      addLegend(position="bottomright",
                 title="air quality conditions are:",
                 colors = AQIColors, labels=AQINames, opacity = 1)
     
@@ -134,10 +134,7 @@ shinyServer(function(input, output, session) {
     modisMask <-  (modisTime >= dateSelect) & (modisTime <= (dateSelect + 60^2*30))
     #confMask  <- modis_df$confidence >= 50 
     mdf <- modis_df[modisMask ,]
-    print(dim(mdf))
 
-    
-    
     ###########################################
     # Handle PM25 Monitors
     ###########################################
@@ -273,7 +270,8 @@ shinyServer(function(input, output, session) {
                     "<b>","Discovered:", "</b>", fdf$DISCOVERY_DATE, "<br>",
                     "<b>","Contained:", "</b>", fdf$CONT_DATE, "<br>",
                     "<b>", "Size (acres):","</b>", fdf$FIRE_SIZE, "<br>",
-                    "<b>", "Cause:","</b>", fdf$STAT_CAUSE_DESCR)
+                    "<b>", "Cause:","</b>", fdf$STAT_CAUSE_DESCR, "<br>",
+                    "<b>", "persons/square-km:","</b>", fdf$POPULATION_DENSITY)
         ) %>%
       
       addCircleMarkers(

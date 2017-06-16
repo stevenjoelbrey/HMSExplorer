@@ -17,7 +17,7 @@ shinyUI(fluidPage(
   tabsetPanel(
     tabPanel(title="Map", 
              
-             leafletOutput("map" , width = "100%", height = 700),
+             leafletOutput("map" , width = "100%", height = 600),
              # 120
              absolutePanel(top = 120, left = 70, width="400px",
                            
@@ -68,7 +68,7 @@ shinyUI(fluidPage(
              #               img(src="aqi_legend.png", align = "right", width=150)
              # ),
              
-             absolutePanel(bottom=0, left=20,
+             tabPanel(bottom=0, left=20,
                            
                            tags$a("Steven Brey | Ph.D. Student |", 
                                   href="http://atmos.colostate.edu/~sjbrey/"),
