@@ -1,4 +1,6 @@
-
+# TODO: Add MODIS active fire data as well as current HMS analysis data layers. 
+# TODO: This means that you set all layers to hide and instead of choosing a date
+# TODO: you say "today". This will be tricky to integrate with the analysis features.
 
 library(shiny)
 library(leaflet)
@@ -16,7 +18,7 @@ shinyUI(fluidPage(
     tabPanel(title="Map", 
              
              leafletOutput("map" , width = "100%", height = 700),
-             
+             # 120
              absolutePanel(top = 120, left = 70, width="400px",
                            
                            dateInput(inputId="plumeDate", label="Mapped Date",
@@ -62,9 +64,9 @@ shinyUI(fluidPage(
                            
              ),
              
-             absolutePanel(bottom=100, right=20,
-                           img(src="aqi_legend.png", align = "right", width=150)
-             ),
+             # absolutePanel(bottom=100, right=20,
+             #               img(src="aqi_legend.png", align = "right", width=150)
+             # ),
              
              absolutePanel(bottom=0, left=20,
                            
@@ -91,8 +93,8 @@ shinyUI(fluidPage(
     
     tabPanel("README", 
              
-      h3("Welcome the the HMS Explorer shiny application!"),
-      p("This website plots publically available data created by U.S government agencies. The code that created this app, along with the underlying data is available for anyone to download, modify, and reuse as they please (see links at bottom of this page).  Please note that this app is a side project of mine, and I make no guarantees of the accuracy of the information plotted within or analysis done using this app. That being said, the information presented is accurate to my knowledge (sans typos, bugs, which my the way, would be great if you told me about if you find any"),
+      h3("Welcome the the Smoke Impact Explorer shiny application!"),
+      p("This website plots publically available data created by U.S government agencies. The code that created this app, along with the underlying data is available for anyone to download, modify, and reuse as they please.  Please note that this app is a side project of mine, and I make no guarantees of the accuracy of the information plotted within or analysis done using this app. That being said, the information presented is accurate to my knowledge (sans typos, bugs, which my the way, would be great if you told me about if you find any)."),
              
       h4('How to use this app'),
       p("All of these data layers can be displayed or hidden by checking the box next to them in the panel that appears on the top right corner of the map. The date of the displayed HMS smoke plumes, HMS fire locations, USFS reported fires, and ambient air quality data can be changed with the calendar widget in the upper left hand corner of the map. Everything on the map except smoke plumes can be clicked for more information. Under the date picker there is a drop down menu for analysis options. The first option is 'overlap' which when selected will show fields for entering a latitude and longitude. Clicking the button 'show location' will place a flag at the entered location and perform a point over polygon calculation for the selected date. This calculation determines whether a smoke plume overlapped that location for the selected date. The result of this calculation can be shown by hovering the mouse over the flag. The 'AQI scatter' option will plot monitor values vs. time for the most recently clicked monitor. The values are color coded by the AQI. Values were no AQI was provided are left black. Currently the plot spans the entire year of the selected date or range of available data for that monitor for that year. The 'html scatter' option is the same except instead of coloring the dots by AQI the dots can be clicked for more information."),

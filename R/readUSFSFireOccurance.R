@@ -19,7 +19,6 @@
 
 library(stringr)
 
-
 pasteZero <- function(s, lengthOut=6){
   
   l <- str_length(s)
@@ -44,10 +43,10 @@ dataFile <- "developmentData/fire_featureclass.txt"
 df <- read.csv(dataFile, stringsAsFactors = FALSE)
 
 # Get start time, containment time, and out time into POSIXct format
-disc_mmddyy <- df$DISCOVERY_DATE
-spaceLocation <- str_locate(disc_mmddyy, " ")
-disc_mmddyy <- str_sub(disc_mmddyy, 1, spaceLocation[,1])
-disc_mmddyy <- str_replace(disc_mmddyy, " ", "")
+disc_mmddyy    <- df$DISCOVERY_DATE
+spaceLocation  <- str_locate(disc_mmddyy, " ")
+disc_mmddyy    <- str_sub(disc_mmddyy, 1, spaceLocation[,1])
+disc_mmddyy    <- str_replace(disc_mmddyy, " ", "")
 discoverd_date <- as.POSIXct(disc_mmddyy, format="%m/%d/%y", tz="UTC")
 
 # Add to dataframe
@@ -71,11 +70,12 @@ columnsToKeep <- c("FPA_ID", "FIRE_NAME","COMPLEX_NAME","DISCOVERY_DATE",
                 "STAT_CAUSE_DESCR", "CONT_DATE","CONT_TIME","FIRE_SIZE",
                 "LATITUDE", "LONGITUDE","OWNER_CODE","FIPS_NAME")
 
+# Where we do not have a containment data, leave as NA, no length calculation
+# will be possible
 # Get rid of any rows that do not have good date information
-rowMask <- !is.na(con_date) & !is.na(discoverd_date)
-
+# rowMask <- !is.na(con_date) & !is.na(discoverd_date)
 columnMask <- names(df) %in% columnsToKeep
-df_subset <- df[rowMask,columnMask]
+df_subset <- df[,columnMask]
 
 # Add a color column, one color for human started, another for natural
 assign("fire_data", df_subset)

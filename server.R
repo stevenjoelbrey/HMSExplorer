@@ -11,10 +11,10 @@
 # Handle done once operations 
 ################################################################################
 
-# loads "hysplitPoints_land" dataframe
 load("data/hysplitPoints_land_both.RData") 
 load("data/fireOccurrence.RData")
-#load("data/MTBSPolygons.RData")
+load("data/MTBSPolygons.RData")
+load("data/modis.RData")
 
 ################################################################################
 # Connect to a fire png logo and make small enough that plotting on map looks 
@@ -22,8 +22,8 @@ load("data/fireOccurrence.RData")
 ################################################################################
 fireIcons <- icons(
   iconUrl = "http://thediscipleproject.net/wp-content/uploads/2013/07/fire-vector.png",
-  iconWidth = 20, 
-  iconHeight = 20
+  iconWidth = 17, 
+  iconHeight = 17
 )
 
 AQSIcons <- icons(
@@ -31,6 +31,12 @@ AQSIcons <- icons(
   iconWidth = 5, 
   iconHeight = 5
   
+)
+
+modisIcons <- icons(
+  iconUrl = "http://www.endlessicons.com/wp-content/uploads/2013/02/fire-icon-614x460.png",
+  iconWidth = 50, 
+  iconHeight = 50
 )
 
 # TODO: Present day analysis 
@@ -43,6 +49,10 @@ shinyServer(function(input, output, session) {
   # Create the map, happens once, does not depend on date
   ########################################################
   output$map <- renderLeaflet({
+    
+    AQIColors <- c("#00E400", "#FFFF00", "#FF7E00", "#FF0000", "#8F3F97", "#7E0023")
+    AQINames  <- c("Good", "Moderate", "Unhealth For Sensitive Groups",
+                   "Unhealthy", "Very Unhealthy", "Hazardous")
     
     map <- leaflet() %>%
       
@@ -58,14 +68,21 @@ shinyServer(function(input, output, session) {
       addLayersControl(
         position="topright",
         baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-        overlayGroups = c("HMS Smoke Plumes","HMS Fires","USFS Reported Fires", 
+        overlayGroups = c("HMS Smoke Plumes","HMS Fires","MODIS Fires",
+                          "FPA-FOD Fires", "MTBS",
                           "PM25 Monitors", "CO Monitors", "Ozone Monitors"),
         options = layersControlOptions(collapsed = FALSE)
       ) %>%
       
       # Set defualt hidden groups 
+      hideGroup("MODIS Fires") %>%
       hideGroup("Ozone Monitors") %>%
-      hideGroup("CO Monitors")
+      hideGroup("CO Monitors") %>%
+      hideGroup("MTBS") %>%
+      
+      addLegend(position="bottomleft",
+                title="air quality conditions are:",
+                colors = AQIColors, labels=AQINames, opacity = 1)
     
     map
     
@@ -86,12 +103,22 @@ shinyServer(function(input, output, session) {
     s <- input$plumeDate
     yyyymmdd <- str_replace_all(s, "-", "")
     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
+    dateSelect <- as.POSIXct(yyyymmdd, format="%Y%m%d", tz="UTC")
     smokePoly <- get(load(plumeFile))
+    
+    ###########################################
+    # Handle MTBS Polygons
+    ###########################################
+    mtbsDates <- MTBSPolygons@data$StartDate
+    mtbsStart <- dateSelect - 1*24*60^2
+    mtbsEnd   <- dateSelect + 7*24*60*60
+    mtbsDateMask <- mtbsDates >= mtbsStart & mtbsDates <= mtbsEnd
+    mtbsPoly     <- MTBSPolygons[mtbsDateMask,]
+    mtbs_df      <- mtbsPoly@data
     
     ###########################################
     # Handle HYSPLIT Points (hp)
     ###########################################
-    dateSelect <- as.POSIXct(yyyymmdd, format="%Y%m%d", tz="UTC")
     hpDates    <- hysplitPoints_land$Date
     dateMask   <- hpDates == dateSelect
     
@@ -99,6 +126,17 @@ shinyServer(function(input, output, session) {
     hp_df <- hysplitPoints_land[dateMask, ]
     hp_lon <- as.numeric(hp_df$Lon)
     hp_lat <- as.numeric(hp_df$Lat)
+    
+    ###########################################
+    # Handle MODIS
+    ###########################################   
+    modisTime <- modis_df$acq_date_time
+    modisMask <-  (modisTime >= dateSelect) & (modisTime <= (dateSelect + 60^2*30))
+    #confMask  <- modis_df$confidence >= 50 
+    mdf <- modis_df[modisMask ,]
+    print(dim(mdf))
+
+    
     
     ###########################################
     # Handle PM25 Monitors
@@ -136,16 +174,25 @@ shinyServer(function(input, output, session) {
     ozone_df    <- AQ_df[dateMask & missingAQIMask,]
     
     ###########################################
-    # Handle USFS Fires
+    # Handle FPA-FOD Fires
     ###########################################
     fireStart <- fire_data$DISCOVERY_DATE
     fireEnd   <- fire_data$CONT_DATE
     
-    # fdf = fireDataFrame
+    # Fires are not required to have a containment data to be in the FPA-FOD
+    # For fires that have not been assigned a containment date assume they last
+    # just one day for the puspose of this mask. 
+    noEndDateMask <- is.na(fireEnd)
+    fireEnd[noEndDateMask] <- fireStart[noEndDateMask]
+    
     m1 <- dateSelect >= fireStart
     m2 <- dateSelect <= fireEnd
     dateMask  <- m1 & m2
     fdf <- fire_data[dateMask,]
+    
+    # Make it known to the user when the containment date is not in the data
+    fireEndLabel <- fireEnd
+    fireEndLabel[is.na(m2)][dateMask] <- NA
     
     ###########################################
     # Create map layers and toggles
@@ -157,16 +204,40 @@ shinyServer(function(input, output, session) {
       clearMarkers() %>%
       clearMarkerClusters() %>%
       clearGroup(group="HMS Smoke Plumes") %>%
+      clearGroup(group="MTBS") %>%
+      #clearGroup(group="MODIS Fires") %>%
       
+      #################
       # Overlay groups
-      addPolygons(data = smokePoly, fillColor="gray47", color="gray47",
+      #################
+      addPolygons(data = mtbsPoly,
+                  fillColor="blue",
+                  fillOpacity = 0.1,
+                  color="blue",
+                  group="MTBS",
+                  label = paste(mtbs_df$Fire_Name, "Type:", mtbs_df$FireType, 
+                                "Acres:",round(mtbs_df$Acres)),
+                  popup=paste("<b>", "Unique ID:","</b>", mtbs_df$Fire_ID,"<br>",
+                              "<b>","Fire Name:", "</b>", mtbs_df$Fire_Name, "<br>",
+                              "<b>","Start Date:", "</b>", mtbs_df$StartDay, "<br>",
+                              "<b>", "Size (acres):","</b>", mtbs_df$Acres, "<br>",
+                              "<b>", "Fire Type:","</b>", mtbs_df$FireType, "<br>",
+                              "<b>", "Confidense:","</b>", mtbs_df$Confidence, "<br>",
+                              "<b>", "Comment:","</b>",mtbs_df$Comment
+                              )
+                  
+                  ) %>%
+      
+      addPolygons(data = smokePoly, 
+                  fillColor="gray47", 
+                  color="gray47",
                   group="HMS Smoke Plumes") %>%
       
       addMarkers(
         layerId=1:length(hp_lat),
         lng=hp_lon,
         lat=hp_lat,
-        clusterOptions = markerClusterOptions(),
+        #clusterOptions = markerClusterOptions(),
         icon = fireIcons,
         label= paste(hp_df$ModisGroupName,
                      "| Duration:",
@@ -176,14 +247,34 @@ shinyServer(function(input, output, session) {
       ) %>%
       
       addMarkers(
-        layerId="USFSFires",
+        lng=mdf$longitude,
+        lat=mdf$latitude,
+        clusterOptions = markerClusterOptions(),
+        icon = modisIcons,
+        label= paste(mdf$satellite, ", Confidense:", mdf$confidence),
+        popup=paste("<b>", "Brightness:","</b>", mdf$brightness,"<br>",
+                    "<b>", "Confidence", "</b>", mdf$confidence,"<br>",
+                    "<b>", "Time:","</b>", mdf$acq_date_time,"<br>",
+                    "<b>", "Satellite:","</b>", mdf$satellite,"<br>",
+                    "<b>", "FRP:","</b>", mdf$frp
+                    ),
+        group="MODIS Fires"
+      ) %>%
+      
+      addMarkers(
+        layerId=fdf$FPA_ID,
         lng=fdf$LONGITUDE,
         lat=fdf$LATITUDE,
         clusterOptions = markerClusterOptions(),
-        label= paste(fdf$FIRE_NAME,", \n cause:",fdf$STAT_CAUSE_DESCR, 
+        label= paste(fdf$FIRE_NAME,", cause:",fdf$STAT_CAUSE_DESCR,
                      ", acres:", fdf$FIRE_SIZE),
-        group="USFS Reported Fires"
-      ) %>%
+        group="FPA-FOD Fires",
+        popup=paste("<b>", "Unique ID:","</b>", fdf$ID,"<br>",
+                    "<b>","Discovered:", "</b>", fdf$DISCOVERY_DATE, "<br>",
+                    "<b>","Contained:", "</b>", fdf$CONT_DATE, "<br>",
+                    "<b>", "Size (acres):","</b>", fdf$FIRE_SIZE, "<br>",
+                    "<b>", "Cause:","</b>", fdf$STAT_CAUSE_DESCR)
+        ) %>%
       
       addCircleMarkers(
         layerId=PM_df$ID,
@@ -267,7 +358,6 @@ shinyServer(function(input, output, session) {
       overlap <- "plume overhead"
     }
     
-    
     leafletProxy(mapId="map") %>%
       # Clear the existing marker
       clearGroup(group="overlapMarker") %>%
@@ -276,6 +366,7 @@ shinyServer(function(input, output, session) {
                  icon=icons(iconUrl='https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png',
                             iconWidth = 20, 
                             iconHeight = 20),
+                 markerOptions(draggable = TRUE),
                  group="overlapMarker")
     
   })
