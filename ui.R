@@ -18,8 +18,8 @@ shinyUI(fluidPage(
     tabPanel(title="Map", 
              
              leafletOutput("map" , width = "100%", height = 600),
-             # 120
-             absolutePanel(top = 120, left = 70, width="400px",
+
+                           absolutePanel(top = 120, left = 70, width="400px",
                            
                            dateInput(inputId="plumeDate", label="Mapped Date",
                                      value = "2012-06-13",
@@ -70,24 +70,24 @@ shinyUI(fluidPage(
              
              tabPanel(bottom=0, left=20,
                            
-                           tags$a("Steven Brey | Ph.D. Student |", 
-                                  href="http://atmos.colostate.edu/~sjbrey/"),
-                           tags$a("Source code |", 
-                                  href="https://github.com/stevenjoelbrey/HMSExplorer"),
-                           tags$a("NESDIS HMS |", 
-                                  href="http://www.ospo.noaa.gov/Products/land/hms.html"),
-                           tags$a("EPA monitor data |", 
-                                  href="http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html"),
-                           tags$a("Reported Fires Data |", 
-                                  href="https://www.fs.usda.gov/rds/archive/Product/RDS-2013-0009.3/"),
-                           tags$a("Current Conditions from AirNow.gov", 
-                                  href="https://airnow.gov/index.cfm?action=topics.smoke_wildfires"),
+                        tags$a("Steven Brey | Ph.D. Student |", 
+                               href="http://atmos.colostate.edu/~sjbrey/"),
+                        tags$a("Source code |", 
+                               href="https://github.com/stevenjoelbrey/HMSExplorer"),
+                        tags$a("NESDIS HMS |", 
+                               href="http://www.ospo.noaa.gov/Products/land/hms.html"),
+                        tags$a("EPA monitor data |", 
+                               href="http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/download_files.html"),
+                        tags$a("Reported Fires Data |", 
+                               href="https://www.fs.usda.gov/rds/archive/Product/RDS-2013-0009.3/"),
+                        tags$a("Current Conditions from AirNow.gov", 
+                               href="https://airnow.gov/index.cfm?action=topics.smoke_wildfires"),
                            
-                           h5(textOutput("counter")),
+                        h5(textOutput("counter")),
                            
-                           #downloadButton(hysplitPoints_land, label = "Download Fire Occurance Data", class = NULL),
+                        #downloadButton(hysplitPoints_land, label = "Download Fire Occurance Data", class = NULL),
                            
-                           width="100%")
+                        width="100%")
             
     ), # End of map tab panel 
     

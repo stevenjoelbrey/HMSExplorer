@@ -13,7 +13,7 @@
 
 load("data/hysplitPoints_land_both.RData") 
 load("data/fireOccurrence_Wpop.RData")
-load("data/MTBSPolygons.RData")
+#load("data/MTBSPolygons.RData")
 load("data/modis.RData")
 
 ################################################################################
@@ -69,7 +69,7 @@ shinyServer(function(input, output, session) {
         position="topright",
         baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
         overlayGroups = c("HMS Smoke Plumes","HMS Fires","MODIS Fires",
-                          "FPA-FOD Fires", "MTBS",
+                          "FPA-FOD Fires",
                           "PM25 Monitors", "CO Monitors", "Ozone Monitors"),
         options = layersControlOptions(collapsed = FALSE)
       ) %>%
@@ -106,15 +106,15 @@ shinyServer(function(input, output, session) {
     dateSelect <- as.POSIXct(yyyymmdd, format="%Y%m%d", tz="UTC")
     smokePoly <- get(load(plumeFile))
     
-    ###########################################
-    # Handle MTBS Polygons
-    ###########################################
-    mtbsDates <- MTBSPolygons@data$StartDate
-    mtbsStart <- dateSelect - 1*24*60^2
-    mtbsEnd   <- dateSelect + 7*24*60*60
-    mtbsDateMask <- mtbsDates >= mtbsStart & mtbsDates <= mtbsEnd
-    mtbsPoly     <- MTBSPolygons[mtbsDateMask,]
-    mtbs_df      <- mtbsPoly@data
+    # ###########################################
+    # # Handle MTBS Polygons
+    # ###########################################
+    # mtbsDates <- MTBSPolygons@data$StartDate
+    # mtbsStart <- dateSelect - 1*24*60^2
+    # mtbsEnd   <- dateSelect + 7*24*60*60
+    # mtbsDateMask <- mtbsDates >= mtbsStart & mtbsDates <= mtbsEnd
+    # mtbsPoly     <- MTBSPolygons[mtbsDateMask,]
+    # mtbs_df      <- mtbsPoly@data
     
     ###########################################
     # Handle HYSPLIT Points (hp)
@@ -202,28 +202,28 @@ shinyServer(function(input, output, session) {
       clearMarkerClusters() %>%
       clearGroup(group="HMS Smoke Plumes") %>%
       clearGroup(group="MTBS") %>%
-      #clearGroup(group="MODIS Fires") %>%
+      clearGroup(group="MODIS Fires") %>%
       
       #################
       # Overlay groups
       #################
-      addPolygons(data = mtbsPoly,
-                  fillColor="blue",
-                  fillOpacity = 0.1,
-                  color="blue",
-                  group="MTBS",
-                  label = paste(mtbs_df$Fire_Name, "Type:", mtbs_df$FireType, 
-                                "Acres:",round(mtbs_df$Acres)),
-                  popup=paste("<b>", "Unique ID:","</b>", mtbs_df$Fire_ID,"<br>",
-                              "<b>","Fire Name:", "</b>", mtbs_df$Fire_Name, "<br>",
-                              "<b>","Start Date:", "</b>", mtbs_df$StartDay, "<br>",
-                              "<b>", "Size (acres):","</b>", mtbs_df$Acres, "<br>",
-                              "<b>", "Fire Type:","</b>", mtbs_df$FireType, "<br>",
-                              "<b>", "Confidense:","</b>", mtbs_df$Confidence, "<br>",
-                              "<b>", "Comment:","</b>",mtbs_df$Comment
-                              )
-                  
-                  ) %>%
+      # addPolygons(data = mtbsPoly,
+      #             fillColor="blue",
+      #             fillOpacity = 0.1,
+      #             color="blue",
+      #             group="MTBS",
+      #             label = paste(mtbs_df$Fire_Name, "Type:", mtbs_df$FireType, 
+      #                           "Acres:",round(mtbs_df$Acres)),
+      #             popup=paste("<b>", "Unique ID:","</b>", mtbs_df$Fire_ID,"<br>",
+      #                         "<b>","Fire Name:", "</b>", mtbs_df$Fire_Name, "<br>",
+      #                         "<b>","Start Date:", "</b>", mtbs_df$StartDay, "<br>",
+      #                         "<b>", "Size (acres):","</b>", mtbs_df$Acres, "<br>",
+      #                         "<b>", "Fire Type:","</b>", mtbs_df$FireType, "<br>",
+      #                         "<b>", "Confidense:","</b>", mtbs_df$Confidence, "<br>",
+      #                         "<b>", "Comment:","</b>",mtbs_df$Comment
+      #                         )
+      #             
+      #             ) %>%
       
       addPolygons(data = smokePoly, 
                   fillColor="gray47", 
