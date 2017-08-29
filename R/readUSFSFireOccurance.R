@@ -20,7 +20,7 @@
 library(stringr)
 
 pasteZero <- function(s, lengthOut=6){
-  
+  # utility function 
   l <- str_length(s)
   
   needsZero <- l < lengthOut
@@ -38,8 +38,11 @@ pasteZero <- function(s, lengthOut=6){
   return(s)
 }
 
-dataFile <- "developmentData/fire_featureclass.txt"
+print("-----------------------------------------------------------------------")
+print("Reading in the really big fire csv")
+print("-----------------------------------------------------------------------")
 
+dataFile <- "developmentData/fire_featureclass.txt"
 df <- read.csv(dataFile, stringsAsFactors = FALSE)
 
 # Get start time, containment time, and out time into POSIXct format
@@ -66,9 +69,9 @@ df$CONT_DATE <- con_date
 
 # Subset the data by the rows of interest
 columnsToKeep <- c("FPA_ID", "FIRE_NAME","COMPLEX_NAME","DISCOVERY_DATE",
-                "DISCOVERY_TIME",
-                "STAT_CAUSE_DESCR", "CONT_DATE","CONT_TIME","FIRE_SIZE",
-                "LATITUDE", "LONGITUDE","OWNER_CODE","FIPS_NAME")
+                   "DISCOVERY_TIME",
+                   "STAT_CAUSE_DESCR", "CONT_DATE","CONT_TIME","FIRE_SIZE",
+                   "LATITUDE", "LONGITUDE","OWNER_CODE","FIPS_NAME")
 
 # Where we do not have a containment data, leave as NA, no length calculation
 # will be possible
@@ -77,10 +80,15 @@ columnsToKeep <- c("FPA_ID", "FIRE_NAME","COMPLEX_NAME","DISCOVERY_DATE",
 columnMask <- names(df) %in% columnsToKeep
 df_subset <- df[,columnMask]
 
+print("-----------------------------------------------------------------------")
+print("Writing the really big (but subset for dired columns) fire csv")
+print("-----------------------------------------------------------------------")
+
 # Add a color column, one color for human started, another for natural
 assign("fire_data", df_subset)
 save(fire_data, file=paste0("data/fireOccurrence.RData"))
 
+# Write the data as csv as well for easy use for pandas.
 
-
+write.csv(fire_data, file=paste0("data/fireOccurrence.csv"), row.names=FALSE)
 

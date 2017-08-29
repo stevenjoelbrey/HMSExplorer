@@ -1,7 +1,7 @@
 # TODO: Add MODIS active fire data as well as current HMS analysis data layers. 
 # TODO: This means that you set all layers to hide and instead of choosing a date
 # TODO: you say "today". This will be tricky to integrate with the analysis features.
-
+# UPDATE: rsync -av --exclude=.git/ --exclude=.Rproj.user/ HMSExplorer/ sbrey@salix:/srv/www/sjbrey/
 library(shiny)
 library(leaflet)
 library(stringr)
@@ -12,14 +12,18 @@ loading <- "True"
 
 shinyUI(fluidPage(
   
-  headerPanel("Smoke Impact Explorer (beta)"),
+  headerPanel("Smoke Impact Explorer (legacy)"),
+  
+  p("This app has moved! The link below will take you to the latest version."),
+  tags$a("http://sjbrey.atmos.colostate.edu/HMSExplorer/", 
+         href="http://sjbrey.atmos.colostate.edu/HMSExplorer/"),
   
   tabsetPanel(
     tabPanel(title="Map", 
              
              leafletOutput("map" , width = "100%", height = 600),
 
-                           absolutePanel(top = 120, left = 70, width="400px",
+                           absolutePanel(top = 200, left = 70, width="400px",
                            
                            dateInput(inputId="plumeDate", label="Mapped Date",
                                      value = "2012-06-13",
