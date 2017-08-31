@@ -8,6 +8,7 @@ library(ggplot2)
 library(gtable)
 library(grid)
 library(gridExtra)
+library(cowplot)
 
 source("R/marginal_plot.R")
 
@@ -27,7 +28,9 @@ df <- AQ_df[IDMask & hasPlumeFile,]
 # classic plot :
 p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
      geom_point() +
-     theme(plot.margin = unit(c(0,-.5,0,.5), "lines"),
+     #geom_hline(yintercept = 60, size = 1, colour = "black", linetype = "solid") +
+     #geom_hline(yintercept = 40, size = 1, colour = "black", linetype = "solid") +
+     theme(plot.margin = unit(c(2,1,0,0), "lines"), 
            plot.background = element_blank()) +
      theme(legend.position="none") 
      #ggtitle("Time Series") + 
@@ -35,19 +38,22 @@ p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
 
 p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
       geom_density() + 
-      #geom_vline(xintercept = 0, size = 1, colour = "black", linetype = "solid") +
-      geom_hline(yintercept = 0, size = 1, colour = "black", linetype = "solid") +
-      
+      geom_hline(yintercept = 0, size = 1, colour = "white", linetype = "solid") +
+      #geom_hline(yintercept = 0, size = 1, colour = "black", linetype = "dashed") +
+      #geom_vline(xintercept = 60, size = 1, colour = "black", linetype = "solid") +
+      #geom_vline(xintercept = 40, size = 1, colour = "black", linetype = "solid") +
       theme(axis.text.y = element_blank(), 
       #axis.ticks.y = element_blank(), 
+      axis.line.y = element_blank(), 
       axis.title.y = element_blank(),
-      plot.margin = unit(c(3,1,0,-1), "lines")) 
+      
+      #axis.line.x = element_blank(), 
+      plot.margin = unit(c(2,1,0,-0.5), "lines")) 
       #ggtitle("density estimate")
 
 p2 = p2 + coord_flip()
 
-library(cowplot)
-plot_grid(p1, p2, ncol=2, align="h", rel_widths=c(3,1))
+plot_grid(p1, p2, ncol=2, align="h", rel_widths=c(3,2))
 
 
 
