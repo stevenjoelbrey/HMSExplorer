@@ -437,6 +437,16 @@ shinyServer(function(input, output, session) {
         
       })
       
+      # Make the time series plot 
+      output$histPlot <- renderPlot({
+      
+        # TODO: Different color for plume density and non plume density
+        # TODO: Make sure this is on a season/date selector
+        hist(AQ_df[[columnSelect]], probability=TRUE)
+  
+        
+      })
+      
       output$scatter <- renderPlotly({
         
         # pal <- c("#00DC21","#FFFA23", "#FF8203", "#FF3100", "#924A96",
