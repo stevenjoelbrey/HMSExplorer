@@ -12,6 +12,8 @@ library(cowplot)
 
 source("R/marginal_plot.R")
 
+# Baller plot 
+# http://www.sthda.com/english/wiki/ggplot2-scatter-plots-quick-start-guide-r-software-and-data-visualization
 
 # Load test data, this will becoming appended dataframes from different years
 AQ_df <- get(load("data/AQS/ozone/ozone_2012.RData"))
@@ -25,6 +27,7 @@ hasPlumeFile <- !is.na(AQ_df$plumeMask)
 
 df <- AQ_df[IDMask & hasPlumeFile,]
 
+
 # classic plot :
 p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
      geom_point() +
@@ -32,9 +35,7 @@ p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
      #geom_hline(yintercept = 40, size = 1, colour = "black", linetype = "solid") +
      theme(plot.margin = unit(c(2,1,0,0), "lines"), 
            plot.background = element_blank()) +
-     theme(legend.position="none") 
-     #ggtitle("Time Series") + 
-     #theme(legend.position="none")
+     theme(legend.position="none")
 
 p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
       geom_density() + 
@@ -46,14 +47,13 @@ p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
       #axis.ticks.y = element_blank(), 
       axis.line.y = element_blank(), 
       axis.title.y = element_blank(),
-      
       #axis.line.x = element_blank(), 
       plot.margin = unit(c(2,1,0,-0.5), "lines")) 
-      #ggtitle("density estimate")
+      ggtitle("density estimate")
 
 p2 = p2 + coord_flip()
 
-plot_grid(p1, p2, ncol=2, align="h", rel_widths=c(3,2))
+p3 <- plot_grid(p1, p2, ncol=2, align="h", rel_widths=c(3,2))
 
 
 
