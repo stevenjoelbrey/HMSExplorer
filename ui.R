@@ -7,23 +7,24 @@ library(leaflet)
 library(stringr)
 library(sp)
 library(plotly)
+library(ggplot2)
+library(grid)
 
-loading <- "True"
 
 shinyUI(fluidPage(
   
-  headerPanel("Smoke Impact Explorer (legacy)"),
+  headerPanel("Smoke Impact Explorer (beta)"),
   
-  p("This app has moved! The link below will take you to the latest version."),
-  tags$a("http://sjbrey.atmos.colostate.edu/HMSExplorer/", 
-         href="http://sjbrey.atmos.colostate.edu/HMSExplorer/"),
+  # p("This app has moved! The link below will take you to the latest version."),
+  # tags$a("http://sjbrey.atmos.colostate.edu/HMSExplorer/", 
+  #        href="http://sjbrey.atmos.colostate.edu/HMSExplorer/"),
   
   tabsetPanel(
     tabPanel(title="Map", 
              
              leafletOutput("map" , width = "100%", height = 600),
 
-                           absolutePanel(top = 200, left = 70, width="400px",
+                           absolutePanel(top = 120, left = 70, width="400px",
                            
                            dateInput(inputId="plumeDate", label="Mapped Date",
                                      value = "2012-06-13",
@@ -34,7 +35,7 @@ shinyUI(fluidPage(
                            
                            selectInput(inputId="analysisType", label="Analysis Type",
                                        choices= c("none", "overlap", "AQI scatter", 
-                                                  "html scatter"),
+                                                  "html scatter", "histogram"),
                                        selected="none",
                                        width=110
                            ),
@@ -63,14 +64,16 @@ shinyUI(fluidPage(
                            conditionalPanel(
                              condition = "input.analysisType == 'html scatter'",
                              plotlyOutput("scatter", width="100%") 
-                           )
+                           ),
+                           
+                           conditionalPanel(
+                             condition = "input.analysisType == 'histogram'",
+                             plotOutput("densitySeries", width="100%") 
+                           )                           
+                           
 
                            
              ),
-             
-             # absolutePanel(bottom=100, right=20,
-             #               img(src="aqi_legend.png", align = "right", width=150)
-             # ),
              
              tabPanel(bottom=0, left=20,
                            

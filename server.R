@@ -411,15 +411,17 @@ shinyServer(function(input, output, session) {
         
       }
       
-      # Get and subset the data 
+      # Get and subset the data by the selected monitor ID
       AQ_df  <- get(load(monitorFile))
       IDMask <- selectID == AQ_df$ID
       AQ_df  <- AQ_df[IDMask,]
       
-      # Make the time series plot 
+      #############################
+      # Make the time series plot
+      #############################      
       output$seriesPlot <- renderPlot({
         
-        MEAN <- round(mean(AQ_df[[columnSelect]]),3)
+        MEAN <- round(mean(AQ_df[[columnSelect]]), 3)
         
         par(mar=c(3,5,3,1))
         plot(AQ_df$Date.Local, AQ_df[[columnSelect]],
@@ -459,6 +461,61 @@ shinyServer(function(input, output, session) {
                 #color = ~AQIColor, colors=pal) 
       })
       
+      ##########################################################################
+      # Development area for density time series
+      ##########################################################################
+      output$densitySeries <- renderPlot({
+        
+        # Now we want to get rid of rows where no HMS smoke plume data was 
+        # available. This is a small percent of the data almost always so this
+        # is ok.
+        hasPlumeFile <- !is.na(AQ_df$plumeMask)
+        df <- AQ_df[hasPlumeFile,]
+        
+        # classic plot :
+        p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
+          geom_point() +
+          #geom_hline(yintercept = 60, size = 1, colour = "black", linetype = "solid") +
+          #geom_hline(yintercept = 40, size = 1, colour = "black", linetype = "solid") +
+          theme(plot.margin = unit(c(2,1,0,0), "lines"), 
+                plot.background = element_blank()) +
+          theme(legend.position=c(0.15, 0.9)) + 
+          xlab("Date") +
+          ylab(ylab)
+
+        p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
+          geom_density() + 
+          geom_hline(yintercept = 0, size = 1, colour = "white", linetype = "solid") +
+          #geom_hline(yintercept = 0, size = 1, colour = "black", linetype = "dashed") +
+          #geom_vline(xintercept = 60, size = 1, colour = "black", linetype = "solid") +
+          #geom_vline(xintercept = 40, size = 1, colour = "black", linetype = "solid") +
+          theme(axis.text.y = element_blank(), 
+                #axis.ticks.y = element_blank(), 
+                axis.line.y = element_blank(), 
+                axis.title.y = element_blank(),
+                #axis.line.x = element_blank(), 
+                plot.margin = unit(c(2,1,0,-0.5), "lines"),
+                legend.position="none") + 
+          ylab("Density") 
+        
+        p2 = p2 + coord_flip()
+        
+        # Try getting this to render with viewpors 
+        vp.L <- viewport(x=0, y=1,
+                         height=unit(1, "npc"), width=unit(3/4, "npc"), 
+                         just=c("left","top")
+        )
+        
+        vp.R <- viewport(x=3/4, y=1,
+                         height=unit(1, "npc"), width=unit(1/4, "npc"), 
+                         just=c("left","top")
+        )
+        
+        print(p1, vp=vp.L)
+        print(p2, vp=vp.R)
+        
+      })
+      
     }
     
     
@@ -470,18 +527,5 @@ shinyServer(function(input, output, session) {
     data$clickedMarker <- NULL
     print(data$clickedMarker)
   })
-  
-  # observeEvent(input$plotTimeRange,{
-  #   # Time mask 
-  #   minTime <- as.POSIXct(input$plotTimeRange[1], tz="UTC")
-  #   maxTime <- as.POSIXct(input$plotTimeRange[2], tz="UTC")
-  #   m <- minTime <= AQ_df$Date.Local & 
-  #     maxTime >= AQ_df$Date.Local
-  #   
-  #   print(paste("sum:", sum(m)))
-  #   
-  #   AQ_df <- AQ_df[m, ]
-  # })
-  
-  
+
 })
