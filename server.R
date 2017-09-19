@@ -7,6 +7,8 @@
 # https://rstudio.github.io/leaflet/showhide.html
 # https://rstudio.github.io/leaflet/shiny.html
 
+# TODO: Append years for analysis plots and allow subsetting of the chosen months. 
+
 ################################################################################
 # Handle done once operations 
 ################################################################################
@@ -470,14 +472,14 @@ shinyServer(function(input, output, session) {
         # available. This is a small percent of the data almost always so this
         # is ok.
         hasPlumeFile <- !is.na(AQ_df$plumeMask)
-        df <- AQ_df[hasPlumeFile,]
+        df           <- AQ_df[hasPlumeFile,]
         
         # classic plot :
         p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
           geom_point() +
-          #geom_hline(yintercept = 60, size = 1, colour = "black", linetype = "solid") +
-          #geom_hline(yintercept = 40, size = 1, colour = "black", linetype = "solid") +
+          scale_color_manual(values=c("black", "red")) + 
           theme(plot.margin = unit(c(2,1,0,0), "lines"), 
+                text = element_text(size=15),
                 plot.background = element_blank()) +
           theme(legend.position=c(0.15, 0.9)) + 
           xlab("Date") +
@@ -485,15 +487,12 @@ shinyServer(function(input, output, session) {
 
         p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
           geom_density() + 
+          scale_color_manual(values=c("black", "red")) +
           geom_hline(yintercept = 0, size = 1, colour = "white", linetype = "solid") +
-          #geom_hline(yintercept = 0, size = 1, colour = "black", linetype = "dashed") +
-          #geom_vline(xintercept = 60, size = 1, colour = "black", linetype = "solid") +
-          #geom_vline(xintercept = 40, size = 1, colour = "black", linetype = "solid") +
-          theme(axis.text.y = element_blank(), 
-                #axis.ticks.y = element_blank(), 
+          theme(text = element_text(size=15),
+                axis.text.y = element_blank(), 
                 axis.line.y = element_blank(), 
                 axis.title.y = element_blank(),
-                #axis.line.x = element_blank(), 
                 plot.margin = unit(c(2,1,0,-0.5), "lines"),
                 legend.position="none") + 
           ylab("Density") 
