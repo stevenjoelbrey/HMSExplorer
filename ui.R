@@ -22,6 +22,9 @@ shinyUI(fluidPage(
   tabsetPanel(
     tabPanel(title="Map", 
              
+             # Get the map to cover the entire height of its panel!
+             # https://stackoverflow.com/questions/36469631/how-to-get-leaflet-for-r-use-100-of-shiny-dashboard-height
+             tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"),
              leafletOutput("map" , width = "100%", height = 600),
 
                            absolutePanel(top = 120, left = 70, width="400px",
