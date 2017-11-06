@@ -10,6 +10,11 @@ library(plotly)
 library(ggplot2)
 library(grid)
 
+# TODO: Change analysis plot sizes depending on the size of the size of the screen being used
+# TODO: Summary of expected smoke plumes and non smoke plume values. Expected values. 
+
+# TODO: Make monthly selection and year selection for analysis plots, rbind yearly dataframes for these
+# TODO: analysis plots. 
 
 shinyUI(fluidPage(
   
@@ -43,14 +48,27 @@ shinyUI(fluidPage(
                                        width=110
                            ),
                            
+                           
+                           # Show date options for time series plots 
+                           # TODO: Make plot update when changes are made here!!! 
+                           conditionalPanel(
+                             
+                             condition = "input.analysisType != 'overlap' & input.analysisType != 'none'",
+                             
+                             bootstrapPage(
+                               div(style="display:inline-block",selectInput(inputId="yearMin", label="start year",choices = c(2005:2015), selected=2006, width = 80)),
+                               div(style="display:inline-block",selectInput(inputId="yearMax", label="end year",choices = c(2005:2015), selected=2015, width = 80)),
+                               div(style="display:inline-block", checkboxGroupInput(inputId="analysisMonths", label="months", choices = c(1:12), selected=c(1:12), inline=T, width=300))
+                             )
+                           ),
                            # Show certain overlap tools 
                            conditionalPanel(
                              
                              condition = "input.analysisType == 'overlap'",
                              
                              bootstrapPage(
-                               div(style="display:inline-block",textInput(inputId="lat", label="lat", value = 41.87898, width=80)),
-                               div(style="display:inline-block",textInput(inputId="lon", label="lon", value = -87.635556, width=80)),
+                               div(style="display:inline-block", textInput(inputId="lat", label="lat", value = 41.87898, width=80)),
+                               div(style="display:inline-block", textInput(inputId="lon", label="lon", value = -87.635556, width=80)),
                                div(style="display:inline-block", actionButton(inputId="plotPaddle", label="show location", width=110))
                              )
                              

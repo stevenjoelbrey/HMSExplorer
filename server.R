@@ -392,31 +392,52 @@ shinyServer(function(input, output, session) {
               selectGroup == "Ozone Monitors"){
       
       # Based on group and year, load yearly file and plot the data
-      year <- str_sub(input$plumeDate,1,4)
+      yearMin <- as.numeric(input$yearMin)
+      yearMax <- as.numeric(input$yearMax)
+      
       if (selectGroup == "PM25 Monitors"){
         
-        monitorFile <- paste0("data/AQS/PM25/PM25_",year,".RData")
+        monitorFile <- paste0("data/AQS/PM25/PM25_")
         ylab <- "ug/m2"
         columnSelect <- "Arithmetic.Mean"
         
       } else if(selectGroup == "CO Monitors"){
         
-        monitorFile <- paste0("data/AQS/CO/CO_",year,".RData")
+        monitorFile <- paste0("data/AQS/CO/CO_")
         ylab <- "ppm" 
         columnSelect <- "Arithmetic.Mean"
         
       } else if(selectGroup == "Ozone Monitors"){
         
-        monitorFile <- paste0("data/AQS/ozone/ozone_",year,".RData")
+        monitorFile <- paste0("data/AQS/ozone/ozone_")
         ylab <- "MDA8 [ppm]" 
         columnSelect <- "X1st.Max.Value"
         
       }
       
       # Get and subset the data by the selected monitor ID
-      AQ_df  <- get(load(monitorFile))
+      # TODO: consider masking as they are loaded to save time? 
+      AQ_df_base <- get(load(paste0(monitorFile, yearMin, ".RData")))
+      for (y in (yearMin + 1):yearMax){
+        
+        new_df <- get(load(paste0(monitorFile, y, ".RData")))
+        
+        AQ_df_base <- rbind(AQ_df_base, new_df)
+        
+      }
+      AQ_df  <- AQ_df_base
       IDMask <- selectID == AQ_df$ID
       AQ_df  <- AQ_df[IDMask,]
+      
+      # Mask by months
+      analysisMonths <- as.numeric(input$analysisMonths)
+      AQITime <- as.POSIXlt(AQ_df$Date.Local)
+      AQIMonth <- AQITime$mon + 1
+      
+      # Create a month mask based on those selected by the user 
+      monthMask <- AQIMonth %in% analysisMonths
+      
+      AQ_df  <- AQ_df[monthMask,]
       
       #############################
       # Make the time series plot
@@ -433,7 +454,7 @@ shinyServer(function(input, output, session) {
              pch=19,
              bty="n",
              main=paste("ID:", selectID, "\n",
-                        year,"mean:", MEAN),
+                        yearMin,"-",yearMax,"mean:", MEAN),
              bg = 'transparent',
              cex.axis=1.4)
         mtext(ylab, side=2, line=3.5)
