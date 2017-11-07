@@ -9,6 +9,7 @@ library(sp)
 library(plotly)
 library(ggplot2)
 library(grid)
+#library(shinyjs)
 
 # TODO: Change analysis plot sizes depending on the size of the size of the screen being used
 # TODO: Summary of expected smoke plumes and non smoke plume values. Expected values. 
@@ -24,12 +25,26 @@ shinyUI(fluidPage(
   # tags$a("http://sjbrey.atmos.colostate.edu/HMSExplorer/", 
   #        href="http://sjbrey.atmos.colostate.edu/HMSExplorer/"),
   
+
+
   tabsetPanel(
     tabPanel(title="Map", 
              
              # Get the map to cover the entire height of its panel!
              # https://stackoverflow.com/questions/36469631/how-to-get-leaflet-for-r-use-100-of-shiny-dashboard-height
              tags$style(type = "text/css", "#map {height: calc(100vh - 130px) !important;}"),
+             
+             
+             tags$style(
+               HTML(".shiny-progress {
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        right: 50%;
+                    }"
+               )
+             ),
+  
              
              # Handle the leaflet output 
              leafletOutput("map" , width = "100%", height = 600),
@@ -55,7 +70,7 @@ shinyUI(fluidPage(
                            absolutePanel(top = 120, left = 18, width="400px",
                              
                                          selectInput(inputId="analysisType", 
-                                                     label=h4("Analysis Plot Type "),
+                                                     label=h4("Monitor Analysis Plot Type"),
                                                      choices=c("None" = "none", 
                                                                "Time Series"="AQI scatter", 
                                                                "Interactive Time Series"="html scatter", 
@@ -76,7 +91,10 @@ shinyUI(fluidPage(
                              
                              bootstrapPage(
                                
-                               sliderInput(inputId="yearRange", label = h5("Year Range"), min = 2006, max = 2015, value = c(2006, 2015), sep="", width = 250),
+                               sliderInput(inputId="yearRange", label = h5("Year Range"), 
+                                           min = 2006, max = 2015, 
+                                           value = c(2006, 2015), 
+                                           sep="", width = 250),
                                
                                tags$style(HTML(".checkbox-inline {margin-left: 10px;}")),
                                #tags$style(HTML(".checkbox-inline {margin-right: 5px;}")),
@@ -106,8 +124,10 @@ shinyUI(fluidPage(
                              
                            ),
                            
+
                            # Show time series plot when selected 
                            conditionalPanel(
+                             # Change CSS of progress bar
                              condition = "input.analysisType == 'AQI scatter'",
                              br(),
                              plotOutput("seriesPlot", width="500px", height = "500px") 

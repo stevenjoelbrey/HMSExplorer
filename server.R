@@ -61,7 +61,7 @@ shinyServer(function(input, output, session) {
     map <- leaflet(
       # Remove the zoom in and out buttons 
       options = leafletOptions(zoomControl = FALSE)
-      ) %>%
+    ) %>%
       
       setView(lng=-100, lat=40, zoom=4) %>%
       addScaleBar(position="bottomleft") %>%
@@ -136,7 +136,7 @@ shinyServer(function(input, output, session) {
     modisMask <-  (modisTime >= dateSelect) & (modisTime <= (dateSelect + 60^2*30))
     #confMask  <- modis_df$confidence >= 50 
     mdf <- modis_df[modisMask ,]
-
+    
     ###########################################
     # Handle PM25 Monitors
     ###########################################
@@ -207,13 +207,13 @@ shinyServer(function(input, output, session) {
       clearGroup(group="MODIS Fires") %>%
       
       #################
-      # Overlay groups
-      #################
-
-      addPolygons(data = smokePoly, 
-                  fillColor="gray47", 
-                  color="gray47",
-                  group="HMS Smoke Plumes") %>%
+    # Overlay groups
+    #################
+    
+    addPolygons(data = smokePoly, 
+                fillColor="gray47", 
+                color="gray47",
+                group="HMS Smoke Plumes") %>%
       
       addMarkers(
         layerId=1:length(hp_lat),
@@ -239,7 +239,7 @@ shinyServer(function(input, output, session) {
                     "<b>", "Time:","</b>", mdf$acq_date_time,"<br>",
                     "<b>", "Satellite:","</b>", mdf$satellite,"<br>",
                     "<b>", "FRP:","</b>", mdf$frp
-                    ),
+        ),
         group="MODIS Fires"
       ) %>%
       
@@ -257,7 +257,7 @@ shinyServer(function(input, output, session) {
                     "<b>", "Size (acres):","</b>", fdf$FIRE_SIZE, "<br>",
                     "<b>", "Cause:","</b>", fdf$STAT_CAUSE_DESCR, "<br>",
                     "<b>", "persons/square-km:","</b>", fdf$POPULATION_DENSITY)
-        ) %>%
+      ) %>%
       
       addCircleMarkers(
         layerId=PM_df$ID,
@@ -269,10 +269,10 @@ shinyServer(function(input, output, session) {
         stroke=FALSE,
         label="PM2.5",
         popup=paste(#"<h5>","Daily Summary:",dateSelect,"</h5><br>",
-                    "<b>", "Monitor ID:","</b>", PM_df$ID,"<br>",
-                    "<b>","Date:", "</b>", PM_df$Date.Local, "<br>",
-                    "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
-                    "<b>", "ug/m2 24-hr mean:","</b>", PM_df$Arithmetic.Mean
+          "<b>", "Monitor ID:","</b>", PM_df$ID,"<br>",
+          "<b>","Date:", "</b>", PM_df$Date.Local, "<br>",
+          "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
+          "<b>", "ug/m2 24-hr mean:","</b>", PM_df$Arithmetic.Mean
         ),
         group="PM25 Monitors"
       ) %>%
@@ -359,19 +359,19 @@ shinyServer(function(input, output, session) {
   data <- reactiveValues(clickedMarker=NULL)
   
   ##############################################################################
-  # observe the marker click info and print to console when it is changed.
+  # observe the marker click or plot button and make analysis plots
   ##############################################################################
   #observeEvent(input$map_marker_click,{
   observeEvent({
     input$plotButton
     input$map_marker_click
-    },{
+  },{
     
     # Get Marker info 
     data$clickedMarker <- input$map_marker_click
     selectID <- data$clickedMarker$id
     selectGroup <- data$clickedMarker$group
-
+    
     if( class(selectGroup) == "NULL"){
       
       # Do nothing 
@@ -380,174 +380,183 @@ shinyServer(function(input, output, session) {
               selectGroup == "CO Monitors" |
               selectGroup == "Ozone Monitors"){
       
-      # Based on group and year, load yearly file and plot the data
-      yearMin <- as.numeric(input$yearRange)[1]
-      yearMax <- as.numeric(input$yearRange)[2]
-      
-      if (selectGroup == "PM25 Monitors"){
+      if(input$analysisType != "none"){
         
-        monitorFile <- paste0("data/AQS/PM25/PM25_")
-        ylab <- "ug/m2"
-        columnSelect <- "Arithmetic.Mean"
-        
-      } else if(selectGroup == "CO Monitors"){
-        
-        monitorFile <- paste0("data/AQS/CO/CO_")
-        ylab <- "ppm" 
-        columnSelect <- "Arithmetic.Mean"
-        
-      } else if(selectGroup == "Ozone Monitors"){
-        
-        monitorFile <- paste0("data/AQS/ozone/ozone_")
-        ylab <- "MDA8 [ppm]" 
-        columnSelect <- "X1st.Max.Value"
-        
-      }
-      
-      # Get and subset the data by the selected monitor ID
-      # TODO: consider masking as they are loaded to save time
-      AQ_df_base <- get(load(paste0(monitorFile, yearMin, ".RData")))
-      if (yearMin != yearMax){
-        loopStart <- yearMin + 1
-        for (y in loopStart:yearMax){
+        withProgress(message = 'Making plot', value = 0, {
           
-          # Get the next years dataframe
-          new_df <- get(load(paste0(monitorFile, y, ".RData")))
+          # Disable update plot button while making a plot 
+          disable("plotButton")
           
-          # Append the yearly AQ dataframe
-          AQ_df_base <- rbind(AQ_df_base, new_df)
+          # Based on group and year, load yearly file and plot the data
+          yearMin <- as.numeric(input$yearRange)[1]
+          yearMax <- as.numeric(input$yearRange)[2]
           
-        }
-      }
-      # Rename to former name for consistency 
-      AQ_df  <- AQ_df_base
-      IDMask <- selectID == AQ_df$ID
-      AQ_df  <- AQ_df[IDMask,]
-      
-      # Mask by months
-      analysisMonths <- as.numeric(input$analysisMonths)
-      AQITime <- as.POSIXlt(AQ_df$Date.Local)
-      AQIMonth <- AQITime$mon + 1
-      
-      # Create a month mask based on those selected by the user 
-      monthMask <- AQIMonth %in% analysisMonths
-      
-      # Subset the data temporally based on interface controls
-      AQ_df  <- AQ_df[monthMask,]
-      
-      # Keep track of what the actualy min and max dates are left
-      t_min <- min(AQ_df$Date.Local)
-      t_max <- max(AQ_df$Date.Local)
-      
-      
-      #############################
-      # Make the time series plot
-      #############################      
-      output$seriesPlot <- renderPlot({
-        
-        MEAN <- round(mean(AQ_df[[columnSelect]]), 3)
-        
-        par(mar=c(3,5,3,1))
-        plot(AQ_df$Date.Local, AQ_df[[columnSelect]],
-             las=1,
-             xlab="", 
-             ylab="",
-             col=AQ_df$AQIColor, 
-             pch=19,
-             cex=1.1,
-             bty="n",
-             main=paste("ID:", selectID, "\n", t_min,"-", t_max,"mean:", MEAN),
-             bg = 'transparent',
-             cex.axis=1.4)
-        mtext(ylab, side=2, line=3.5)
-        points(AQ_df$Date.Local, AQ_df[[columnSelect]], col = adjustcolor(col="black", alpha.f = 0.2))
-        
-      })
-      
-      # Make the time series plot 
-      output$histPlot <- renderPlot({
-      
-        # TODO: Different color for plume density and non plume density
-        # TODO: Make sure this is on a season/date selector
-        hist(AQ_df[[columnSelect]], probability=TRUE)
-  
-        
-      })
-      
-      output$scatter <- renderPlotly({
-        
-        plot_ly(AQ_df, x = ~Date.Local, y = AQ_df[[columnSelect]]) 
-                #color = ~AQIColor, colors=pal) 
-      })
-      
-      # Create time series and plume non-plume day density estimates 
-      output$densitySeries <- renderPlot({
-        
-        # Now we want to get rid of rows where no HMS smoke plume data was 
-        # available. This is a small percent of the data almost always so this
-        # is ok.
-        hasPlumeFile <- !is.na(AQ_df$plumeMask)
-        df           <- AQ_df[hasPlumeFile,]
-        
-        # Calculate plume and non plume mean values 
-        plumeMean <- round(mean(df$X1st.Max.Value[df$plumeMask] ,na.rm = TRUE), 4)
-        clearMean <- round(mean(df$X1st.Max.Value[!df$plumeMask] ,na.rm = TRUE), 4)
-        
-        deltaPlume <- plumeMean - clearMean 
-        
-        plumeLabel <- paste("Yes", "(mean value =", plumeMean,")")      
-        clearLabel <- paste("No", "(mean value =", clearMean,")") 
-  
-        # Time series plot
-        # TODO: Handle X2st.Max.Value or X1st.Mean.Value depending on selected species
-        p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
-          geom_point() +
-          scale_color_manual(name="Under Smoke Plume", 
-                             breaks=c(0, 1),
-                             values=c("blue","red"),
-                             labels=c(clearLabel, plumeLabel)
-                             ) + 
-          theme(plot.margin = unit(c(2,1,0,0), "lines"), 
-                text = element_text(size=15),
-                plot.background = element_blank()) +
-          theme(legend.position=c(0.2, 0.9) ) +
-          xlab("Date") +
-          ylab(ylab) +
-          ggtitle(paste0("Monitor ID: ", selectID, " ; DeltaPlume = ", deltaPlume))
+          if (selectGroup == "PM25 Monitors"){
+            
+            monitorFile <- paste0("data/AQS/PM25/PM25_")
+            ylab <- "ug/m2"
+            columnSelect <- "Arithmetic.Mean"
+            
+          } else if(selectGroup == "CO Monitors"){
+            
+            monitorFile <- paste0("data/AQS/CO/CO_")
+            ylab <- "ppm" 
+            columnSelect <- "Arithmetic.Mean"
+            
+          } else if(selectGroup == "Ozone Monitors"){
+            
+            monitorFile <- paste0("data/AQS/ozone/ozone_")
+            ylab <- "MDA8 [ppm]" 
+            columnSelect <- "X1st.Max.Value"
+            
+          }
           
-
-        # The density plot
-        p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
-          geom_density() + 
-          scale_color_manual(values=c("blue", "red")) +
-          geom_hline(yintercept = 0, size = 1, colour = "white", linetype = "solid") +
-          theme(text = element_text(size=15),
-                axis.text.y = element_blank(), 
-                axis.line.y = element_blank(), 
-                axis.title.y = element_blank(),
-                plot.margin = unit(c(2,1,0,-0.5), "lines"),
-                legend.position="none") + 
-          ylab(paste("Density Estimate")) +
-          ggtitle("")
-        
-        p2 = p2 + coord_flip()
-        
-        # Try getting this to render with viewpors 
-        vp.L <- viewport(x=0, y=1,
-                         height=unit(1, "npc"), width=unit(3/4, "npc"), 
-                         just=c("left","top")
-        )
-        
-        vp.R <- viewport(x=3/4, y=1,
-                         height=unit(1, "npc"), width=unit(1/4, "npc"), 
-                         just=c("left","top")
-        )
-        
-        print(p1, vp=vp.L)
-        print(p2, vp=vp.R)
-        
-      })
-      
+          # Get and subset the data by the selected monitor ID
+          # TODO: consider masking as they are loaded to save time
+          AQ_df_base <- get(load(paste0(monitorFile, yearMin, ".RData")))
+          if (yearMin != yearMax){
+            loopStart <- yearMin + 1
+            for (y in loopStart:yearMax){
+              
+              # Get the next years dataframe
+              new_df <- get(load(paste0(monitorFile, y, ".RData")))
+              
+              # Append the yearly AQ dataframe
+              AQ_df_base <- rbind(AQ_df_base, new_df)
+              
+            }
+          }
+          # Rename to former name for consistency 
+          AQ_df  <- AQ_df_base
+          IDMask <- selectID == AQ_df$ID
+          AQ_df  <- AQ_df[IDMask,]
+          
+          # Mask by months
+          analysisMonths <- as.numeric(input$analysisMonths)
+          AQITime <- as.POSIXlt(AQ_df$Date.Local)
+          AQIMonth <- AQITime$mon + 1
+          
+          # Create a month mask based on those selected by the user 
+          monthMask <- AQIMonth %in% analysisMonths
+          
+          # Subset the data temporally based on interface controls
+          AQ_df  <- AQ_df[monthMask,]
+          
+          # Keep track of what the actualy min and max dates are left
+          t_min <- min(AQ_df$Date.Local)
+          t_max <- max(AQ_df$Date.Local)
+          
+          
+          #############################
+          # Make the time series plot
+          #############################      
+          output$seriesPlot <- renderPlot({
+            
+            MEAN <- round(mean(AQ_df[[columnSelect]]), 3)
+            
+            par(mar=c(3,5,3,1))
+            plot(AQ_df$Date.Local, AQ_df[[columnSelect]],
+                 las=1,
+                 xlab="", 
+                 ylab="",
+                 col=AQ_df$AQIColor, 
+                 pch=19,
+                 cex=1.1,
+                 bty="n",
+                 main=paste("ID:", selectID, "\n", t_min,"-", t_max,"mean:", MEAN),
+                 bg = 'transparent',
+                 cex.axis=1.4)
+            mtext(ylab, side=2, line=3.5)
+            points(AQ_df$Date.Local, AQ_df[[columnSelect]], col = adjustcolor(col="black", alpha.f = 0.2))
+            
+          })
+          
+          # Make the time series plot 
+          output$histPlot <- renderPlot({
+            
+            # TODO: Different color for plume density and non plume density
+            # TODO: Make sure this is on a season/date selector
+            hist(AQ_df[[columnSelect]], probability=TRUE)
+            
+            
+          })
+          
+          output$scatter <- renderPlotly({
+            
+            plot_ly(AQ_df, x = ~Date.Local, y = AQ_df[[columnSelect]]) 
+            #color = ~AQIColor, colors=pal) 
+          })
+          
+          # Create time series and plume non-plume day density estimates 
+          output$densitySeries <- renderPlot({
+            
+            # Now we want to get rid of rows where no HMS smoke plume data was 
+            # available. This is a small percent of the data almost always so this
+            # is ok.
+            hasPlumeFile <- !is.na(AQ_df$plumeMask)
+            df           <- AQ_df[hasPlumeFile,]
+            
+            # Calculate plume and non plume mean values 
+            plumeMean <- round(mean(df$X1st.Max.Value[df$plumeMask] ,na.rm = TRUE), 4)
+            clearMean <- round(mean(df$X1st.Max.Value[!df$plumeMask] ,na.rm = TRUE), 4)
+            
+            deltaPlume <- plumeMean - clearMean 
+            
+            plumeLabel <- paste("Yes", "(mean value =", plumeMean,")")      
+            clearLabel <- paste("No", "(mean value =", clearMean,")") 
+            
+            # Time series plot
+            # TODO: Handle X2st.Max.Value or X1st.Mean.Value depending on selected species
+            p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
+              geom_point() +
+              scale_color_manual(name="Under Smoke Plume", 
+                                 breaks=c(0, 1),
+                                 values=c("blue","red"),
+                                 labels=c(clearLabel, plumeLabel)
+              ) + 
+              theme(plot.margin = unit(c(2,1,0,0), "lines"), 
+                    text = element_text(size=15),
+                    plot.background = element_blank()) +
+              theme(legend.position=c(0.2, 0.9) ) +
+              xlab("Date") +
+              ylab(ylab) +
+              ggtitle(paste0("Monitor ID: ", selectID, " ; DeltaPlume = ", deltaPlume))
+            
+            
+            # The density plot
+            p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
+              geom_density() + 
+              scale_color_manual(values=c("blue", "red")) +
+              geom_hline(yintercept = 0, size = 1, colour = "white", linetype = "solid") +
+              theme(text = element_text(size=15),
+                    axis.text.y = element_blank(), 
+                    axis.line.y = element_blank(), 
+                    axis.title.y = element_blank(),
+                    plot.margin = unit(c(2,1,0,-0.5), "lines"),
+                    legend.position="none") + 
+              ylab(paste("Density Estimate")) +
+              ggtitle("")
+            
+            p2 = p2 + coord_flip()
+            
+            # Try getting this to render with viewpors 
+            vp.L <- viewport(x=0, y=1,
+                             height=unit(1, "npc"), width=unit(3/4, "npc"), 
+                             just=c("left","top")
+            )
+            
+            vp.R <- viewport(x=3/4, y=1,
+                             height=unit(1, "npc"), width=unit(1/4, "npc"), 
+                             just=c("left","top")
+            )
+            
+            print(p1, vp=vp.L)
+            print(p2, vp=vp.R)
+            
+          })
+          enable("plotButton")
+        })
+      }# progress bar
     }
     
     
@@ -559,5 +568,5 @@ shinyServer(function(input, output, session) {
     data$clickedMarker <- NULL
     print(data$clickedMarker)
   })
-
+  
 })
