@@ -7,15 +7,17 @@
 # https://rstudio.github.io/leaflet/showhide.html
 # https://rstudio.github.io/leaflet/shiny.html
 
+# TODO: Find a way to tell the user the page is loading!
+
 # TODO: Append years for analysis plots and allow subsetting of the chosen months. 
 
 ################################################################################
 # Handle done once operations 
 ################################################################################
 
+
 load("data/hysplitPoints_land_both.RData") 
 load("data/fireOccurrence_Wpop.RData")
-#load("data/MTBSPolygons.RData")
 load("data/modis.RData")
 
 ################################################################################
@@ -41,7 +43,7 @@ modisIcons <- icons(
   iconHeight = 50
 )
 
-# TODO: Present day analysis 
+# TODO (sometime in 2018): Present day analysis 
 # fire  <- 'http://www.ospo.noaa.gov/data/land/fire/fire.kml'
 # smoke <- 'http://www.ospo.noaa.gov/data/land/fire/smoke.kml' 
 
@@ -56,10 +58,13 @@ shinyServer(function(input, output, session) {
     AQINames  <- c("Good", "Moderate", "Unhealth For Sensitive Groups",
                    "Unhealthy", "Very Unhealthy", "Hazardous")
     
-    map <- leaflet() %>%
+    map <- leaflet(
+      # Remove the zoom in and out buttons 
+      options = leafletOptions(zoomControl = FALSE)
+      ) %>%
       
       setView(lng=-100, lat=40, zoom=4) %>%
-      addScaleBar(position="bottomright") %>%
+      addScaleBar(position="bottomleft") %>%
       
       # Base groups
       addTiles(group = "OSM (default)") %>%
@@ -67,13 +72,18 @@ shinyServer(function(input, output, session) {
       addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
       
       # Layers control
+      
       addLayersControl(
-        position="topright",
+        position= "topright",
         baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-        overlayGroups = c("HMS Smoke Plumes","HMS Fires","MODIS Fires",
+        overlayGroups = c("HMS Smoke Plumes",
+                          "HMS Fires",
+                          "MODIS Fires",
                           "FPA-FOD Fires",
-                          "PM25 Monitors", "CO Monitors", "Ozone Monitors"),
-        options = layersControlOptions(collapsed = FALSE)
+                          "PM25 Monitors", 
+                          "CO Monitors", 
+                          "Ozone Monitors"),
+        options = layersControlOptions(collapsed = T)
       ) %>%
       
       # Set defualt hidden groups 
@@ -107,16 +117,6 @@ shinyServer(function(input, output, session) {
     plumeFile <- paste0('data/smoke/', yyyymmdd, "_hms_smoke.RData")
     dateSelect <- as.POSIXct(yyyymmdd, format="%Y%m%d", tz="UTC")
     smokePoly <- get(load(plumeFile))
-    
-    # ###########################################
-    # # Handle MTBS Polygons
-    # ###########################################
-    # mtbsDates <- MTBSPolygons@data$StartDate
-    # mtbsStart <- dateSelect - 1*24*60^2
-    # mtbsEnd   <- dateSelect + 7*24*60*60
-    # mtbsDateMask <- mtbsDates >= mtbsStart & mtbsDates <= mtbsEnd
-    # mtbsPoly     <- MTBSPolygons[mtbsDateMask,]
-    # mtbs_df      <- mtbsPoly@data
     
     ###########################################
     # Handle HYSPLIT Points (hp)
@@ -209,24 +209,7 @@ shinyServer(function(input, output, session) {
       #################
       # Overlay groups
       #################
-      # addPolygons(data = mtbsPoly,
-      #             fillColor="blue",
-      #             fillOpacity = 0.1,
-      #             color="blue",
-      #             group="MTBS",
-      #             label = paste(mtbs_df$Fire_Name, "Type:", mtbs_df$FireType, 
-      #                           "Acres:",round(mtbs_df$Acres)),
-      #             popup=paste("<b>", "Unique ID:","</b>", mtbs_df$Fire_ID,"<br>",
-      #                         "<b>","Fire Name:", "</b>", mtbs_df$Fire_Name, "<br>",
-      #                         "<b>","Start Date:", "</b>", mtbs_df$StartDay, "<br>",
-      #                         "<b>", "Size (acres):","</b>", mtbs_df$Acres, "<br>",
-      #                         "<b>", "Fire Type:","</b>", mtbs_df$FireType, "<br>",
-      #                         "<b>", "Confidense:","</b>", mtbs_df$Confidence, "<br>",
-      #                         "<b>", "Comment:","</b>",mtbs_df$Comment
-      #                         )
-      #             
-      #             ) %>%
-      
+
       addPolygons(data = smokePoly, 
                   fillColor="gray47", 
                   color="gray47",
@@ -285,9 +268,10 @@ shinyServer(function(input, output, session) {
         fillOpacity=0.8,
         stroke=FALSE,
         label="PM2.5",
-        popup=paste("<b>", "Unique ID:","</b>", PM_df$ID,"<br>",
-                    "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
+        popup=paste(#"<h5>","Daily Summary:",dateSelect,"</h5><br>",
+                    "<b>", "Monitor ID:","</b>", PM_df$ID,"<br>",
                     "<b>","Date:", "</b>", PM_df$Date.Local, "<br>",
+                    "<b>","PM25 AQI:", "</b>", PM_df$AQI, "<br>",
                     "<b>", "ug/m2 24-hr mean:","</b>", PM_df$Arithmetic.Mean
         ),
         group="PM25 Monitors"
@@ -303,8 +287,8 @@ shinyServer(function(input, output, session) {
         stroke=FALSE,
         label="CO",
         popup=paste("<b>", "Unique ID:","</b>", CO_df$ID,"<br>",
-                    "<b>","CO AQI:", "</b>", CO_df$AQI, "<br>",
                     "<b>","Date:", "</b>", CO_df$Date.Local, "<br>",
+                    "<b>","CO AQI:", "</b>", CO_df$AQI, "<br>",
                     "<b>", "ppm 24-hr mean:","</b>", CO_df$Arithmetic.Mean
         ),
         group="CO Monitors"
@@ -320,9 +304,9 @@ shinyServer(function(input, output, session) {
         stroke=FALSE,
         label="O3",
         popup=paste("<b>", "Unique ID:","</b>", ozone_df$ID,"<br>",
-                    "<b>","Ozone AQI:", "</b>", ozone_df$AQI, "<br>",
                     "<b>","Date:", "</b>", ozone_df$Date.Local, "<br>",
-                    "<b>", "MDA8:","</b>", ozone_df$X1st.Max.Value * 1000
+                    "<b>","Ozone AQI:", "</b>", ozone_df$AQI, "<br>",
+                    "<b>", "MDA8:","</b>", ozone_df$X1st.Max.Value * 1000, " ppbv"
         ),
         group="Ozone Monitors"
         
@@ -379,6 +363,7 @@ shinyServer(function(input, output, session) {
   ##############################################################################
   observeEvent(input$map_marker_click,{
     
+    # Get Marker info 
     data$clickedMarker <- input$map_marker_click
     selectID <- data$clickedMarker$id
     selectGroup <- data$clickedMarker$group
@@ -392,8 +377,8 @@ shinyServer(function(input, output, session) {
               selectGroup == "Ozone Monitors"){
       
       # Based on group and year, load yearly file and plot the data
-      yearMin <- as.numeric(input$yearMin)
-      yearMax <- as.numeric(input$yearMax)
+      yearMin <- as.numeric(input$yearRange)[1]
+      yearMax <- as.numeric(input$yearRange)[2]
       
       if (selectGroup == "PM25 Monitors"){
         
@@ -416,15 +401,21 @@ shinyServer(function(input, output, session) {
       }
       
       # Get and subset the data by the selected monitor ID
-      # TODO: consider masking as they are loaded to save time? 
+      # TODO: consider masking as they are loaded to save time
       AQ_df_base <- get(load(paste0(monitorFile, yearMin, ".RData")))
-      for (y in (yearMin + 1):yearMax){
-        
-        new_df <- get(load(paste0(monitorFile, y, ".RData")))
-        
-        AQ_df_base <- rbind(AQ_df_base, new_df)
-        
+      if (yearMin != yearMax){
+        loopStart <- yearMin + 1
+        for (y in loopStart:yearMax){
+          
+          # Get the next years dataframe
+          new_df <- get(load(paste0(monitorFile, y, ".RData")))
+          
+          # Append the yearly AQ dataframe
+          AQ_df_base <- rbind(AQ_df_base, new_df)
+          
+        }
       }
+      # Rename to former name for consistency 
       AQ_df  <- AQ_df_base
       IDMask <- selectID == AQ_df$ID
       AQ_df  <- AQ_df[IDMask,]
@@ -437,7 +428,13 @@ shinyServer(function(input, output, session) {
       # Create a month mask based on those selected by the user 
       monthMask <- AQIMonth %in% analysisMonths
       
+      # Subset the data temporally based on interface controls
       AQ_df  <- AQ_df[monthMask,]
+      
+      # Keep track of what the actualy min and max dates are left
+      t_min <- min(AQ_df$Date.Local)
+      t_max <- max(AQ_df$Date.Local)
+      
       
       #############################
       # Make the time series plot
@@ -449,16 +446,17 @@ shinyServer(function(input, output, session) {
         par(mar=c(3,5,3,1))
         plot(AQ_df$Date.Local, AQ_df[[columnSelect]],
              las=1,
-             xlab="", ylab="",
+             xlab="", 
+             ylab="",
              col=AQ_df$AQIColor, 
              pch=19,
+             cex=1.1,
              bty="n",
-             main=paste("ID:", selectID, "\n",
-                        yearMin,"-",yearMax,"mean:", MEAN),
+             main=paste("ID:", selectID, "\n", t_min,"-", t_max,"mean:", MEAN),
              bg = 'transparent',
              cex.axis=1.4)
         mtext(ylab, side=2, line=3.5)
-        points(AQ_df$Date.Local, AQ_df[[columnSelect]])
+        points(AQ_df$Date.Local, AQ_df[[columnSelect]], col = adjustcolor(col="black", alpha.f = 0.2))
         
       })
       
@@ -474,19 +472,11 @@ shinyServer(function(input, output, session) {
       
       output$scatter <- renderPlotly({
         
-        # pal <- c("#00DC21","#FFFA23", "#FF8203", "#FF3100", "#924A96",
-        #               "#841422")
-        # 
-        # pal <- setNames(pal, c("#00DC21","#FFFA23", "#FF8203", "#FF3100", "#924A96",
-        #                        "#841422"))
-        
         plot_ly(AQ_df, x = ~Date.Local, y = AQ_df[[columnSelect]]) 
                 #color = ~AQIColor, colors=pal) 
       })
       
-      ##########################################################################
-      # Development area for density time series
-      ##########################################################################
+      # Create time series and plume non-plume day density estimates 
       output$densitySeries <- renderPlot({
         
         # Now we want to get rid of rows where no HMS smoke plume data was 
@@ -495,7 +485,8 @@ shinyServer(function(input, output, session) {
         hasPlumeFile <- !is.na(AQ_df$plumeMask)
         df           <- AQ_df[hasPlumeFile,]
         
-        # classic plot :
+        # Time series plot
+        # TODO: Handle X2st.Max.Value or X1st.Mean.Value depending on selected species
         p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
           geom_point() +
           scale_color_manual(values=c("black", "red")) + 
@@ -506,6 +497,7 @@ shinyServer(function(input, output, session) {
           xlab("Date") +
           ylab(ylab)
 
+        # The density plot
         p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
           geom_density() + 
           scale_color_manual(values=c("black", "red")) +

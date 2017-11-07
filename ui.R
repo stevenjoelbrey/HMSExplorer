@@ -29,37 +29,68 @@ shinyUI(fluidPage(
              
              # Get the map to cover the entire height of its panel!
              # https://stackoverflow.com/questions/36469631/how-to-get-leaflet-for-r-use-100-of-shiny-dashboard-height
-             tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"),
+             tags$style(type = "text/css", "#map {height: calc(100vh - 130px) !important;}"),
+             
+             # Handle the leaflet output 
              leafletOutput("map" , width = "100%", height = 600),
 
-                           absolutePanel(top = 120, left = 70, width="400px",
-                           
-                           dateInput(inputId="plumeDate", label="Mapped Date",
-                                     value = "2012-06-13",
-                                     min = "2005-08-05", max = "2015-12-30",
-                                     format = "yyyy-mm-dd", startview = "month",
-                                     language = "en",
-                                     width=110),
-                           
-                           selectInput(inputId="analysisType", label="Analysis Type",
-                                       choices= c("none", "overlap", "AQI scatter", 
-                                                  "html scatter", "histogram"),
-                                       selected="none",
-                                       width=110
+                           # Set the panel that handles the map and daily analysis 
+                           absolutePanel(top = 118, right = 100, width="300px",
+                              h4("Map display date & layers:")
+                           ),
+             
+                           absolutePanel(top = 102, right = 65, width="110px",
+                                         div(style="display:inline-block",   
+                                          
+                                           dateInput(inputId="plumeDate", label="",
+                                                     value = "2012-06-13",
+                                                     min = "2005-08-05", max = "2015-12-30",
+                                                     format = "yyyy-mm-dd", startview = "month",
+                                                     language = "en",
+                                                     width=110)
+                                         )
+                             
+                           ),
+             
+                           absolutePanel(top = 120, left = 18, width="400px",
+                             
+                                         selectInput(inputId="analysisType", label=h4("Analysis Plot Type "),
+                                         choices= c("none",
+                                                    "AQI scatter", 
+                                                    "html scatter", 
+                                                    "histogram",
+                                                    "overlap"),
+                                         selected="none",
+                                         width=250
+                                         
                            ),
                            
                            
                            # Show date options for time series plots 
                            # TODO: Make plot update when changes are made here!!! 
+                           # TODO: Possible dropdown check box option here: https://stackoverflow.com/questions/34530142/drop-down-checkbox-input-in-shiny
                            conditionalPanel(
                              
                              condition = "input.analysisType != 'overlap' & input.analysisType != 'none'",
                              
                              bootstrapPage(
-                               div(style="display:inline-block",selectInput(inputId="yearMin", label="start year",choices = c(2005:2015), selected=2006, width = 80)),
-                               div(style="display:inline-block",selectInput(inputId="yearMax", label="end year",choices = c(2005:2015), selected=2015, width = 80)),
-                               div(style="display:inline-block", checkboxGroupInput(inputId="analysisMonths", label="months", choices = c(1:12), selected=c(1:12), inline=T, width=300))
+                               
+                               sliderInput(inputId="yearRange", label = h5("Year Range"), min = 2006, max = 2015, value = c(2006, 2015), sep="", width = 250),
+                               
+                               tags$style(HTML(".checkbox-inline {margin-left: 10px;}")),
+                               
+                               checkboxGroupInput(inputId="analysisMonths", label="Included Months", 
+                                                  choiceNames=c("1 ", "2 ", "3 ", "4 ", "5 ", "6 ", "7 ", "8 ", "9 ", "10", "11", "12"),
+                                                  choiceValues = c(1,2,3,4,5,6,7,8,9,10,11,12), 
+                                                  selected=c(1:12), 
+                                                  inline=T, width=270)
+                               
+                               #div(style="display:inline-block",selectInput(inputId="yearMin", label="start year",choices = c(2005:2015), selected=2006, width = 80)),
+                               #div(style="display:inline-block",selectInput(inputId="yearMax", label="end year",choices = c(2005:2015), selected=2015, width = 80)),
+                               #div(style="display:inline-block", checkboxGroupInput(inputId="analysisMonths_1", label="Months", choices = c(1:12), selected=c(1:12), inline=T, width=400))
+                               #div(style="display:inline-block", checkboxGroupInput(inputId="analysisMonths_2", label="", choices = c(1:6), selected=c(1:6), inline=T, width=270))
                              )
+                             
                            ),
                            # Show certain overlap tools 
                            conditionalPanel(
@@ -78,18 +109,18 @@ shinyUI(fluidPage(
                            conditionalPanel(
                              condition = "input.analysisType == 'AQI scatter'",
                              br(),
-                             plotOutput("seriesPlot", width="100%") 
+                             plotOutput("seriesPlot", width="500px", height = "500px") 
                              
                            ),
                            
                            conditionalPanel(
                              condition = "input.analysisType == 'html scatter'",
-                             plotlyOutput("scatter", width="100%") 
+                             plotlyOutput("scatter", width="500px", height = "500px") 
                            ),
                            
                            conditionalPanel(
                              condition = "input.analysisType == 'histogram'",
-                             plotOutput("densitySeries", width="100%") 
+                             plotOutput("densitySeries", width="500px", height = "500px") 
                            )                           
                            
 
