@@ -362,7 +362,10 @@ shinyServer(function(input, output, session) {
   # observe the marker click info and print to console when it is changed.
   ##############################################################################
   #observeEvent(input$map_marker_click,{
-  observeEvent(input$plotButton,{
+  observeEvent({
+    input$plotButton
+    input$map_marker_click
+    },{
     
     # Get Marker info 
     data$clickedMarker <- input$map_marker_click
