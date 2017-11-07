@@ -361,7 +361,8 @@ shinyServer(function(input, output, session) {
   ##############################################################################
   # observe the marker click info and print to console when it is changed.
   ##############################################################################
-  observeEvent(input$map_marker_click,{
+  #observeEvent(input$map_marker_click,{
+  observeEvent(input$plotButton,{
     
     # Get Marker info 
     data$clickedMarker <- input$map_marker_click
@@ -485,22 +486,37 @@ shinyServer(function(input, output, session) {
         hasPlumeFile <- !is.na(AQ_df$plumeMask)
         df           <- AQ_df[hasPlumeFile,]
         
+        # Calculate plume and non plume mean values 
+        plumeMean <- round(mean(df$X1st.Max.Value[df$plumeMask] ,na.rm = TRUE), 4)
+        clearMean <- round(mean(df$X1st.Max.Value[!df$plumeMask] ,na.rm = TRUE), 4)
+        
+        deltaPlume <- plumeMean - clearMean 
+        
+        plumeLabel <- paste("Yes", "(mean value =", plumeMean,")")      
+        clearLabel <- paste("No", "(mean value =", clearMean,")") 
+  
         # Time series plot
         # TODO: Handle X2st.Max.Value or X1st.Mean.Value depending on selected species
         p1 = ggplot(df, aes(x=Date.Local, y=X1st.Max.Value, color=plumeMask)) +
           geom_point() +
-          scale_color_manual(values=c("black", "red")) + 
+          scale_color_manual(name="Under Smoke Plume", 
+                             breaks=c(0, 1),
+                             values=c("blue","red"),
+                             labels=c(clearLabel, plumeLabel)
+                             ) + 
           theme(plot.margin = unit(c(2,1,0,0), "lines"), 
                 text = element_text(size=15),
                 plot.background = element_blank()) +
-          theme(legend.position=c(0.15, 0.9)) + 
+          theme(legend.position=c(0.2, 0.9) ) +
           xlab("Date") +
-          ylab(ylab)
+          ylab(ylab) +
+          ggtitle(paste0("Monitor ID: ", selectID, " ; DeltaPlume = ", deltaPlume))
+          
 
         # The density plot
         p2 <- ggplot(df, aes(x = X1st.Max.Value, colour=plumeMask)) +
           geom_density() + 
-          scale_color_manual(values=c("black", "red")) +
+          scale_color_manual(values=c("blue", "red")) +
           geom_hline(yintercept = 0, size = 1, colour = "white", linetype = "solid") +
           theme(text = element_text(size=15),
                 axis.text.y = element_blank(), 
@@ -508,7 +524,8 @@ shinyServer(function(input, output, session) {
                 axis.title.y = element_blank(),
                 plot.margin = unit(c(2,1,0,-0.5), "lines"),
                 legend.position="none") + 
-          ylab("Density") 
+          ylab(paste("Density Estimate")) +
+          ggtitle("")
         
         p2 = p2 + coord_flip()
         

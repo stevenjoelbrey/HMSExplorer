@@ -54,14 +54,15 @@ shinyUI(fluidPage(
              
                            absolutePanel(top = 120, left = 18, width="400px",
                              
-                                         selectInput(inputId="analysisType", label=h4("Analysis Plot Type "),
-                                         choices= c("none",
-                                                    "AQI scatter", 
-                                                    "html scatter", 
-                                                    "histogram",
-                                                    "overlap"),
-                                         selected="none",
-                                         width=250
+                                         selectInput(inputId="analysisType", 
+                                                     label=h4("Analysis Plot Type "),
+                                                     choices=c("None" = "none", 
+                                                               "Time Series"="AQI scatter", 
+                                                               "Interactive Time Series"="html scatter", 
+                                                               "Plume vs. No Plume comparison"="histogram", 
+                                                               "Plume Overlap Analysis"="overlap"),
+                                                     selected="none",
+                                                     width=250
                                          
                            ),
                            
@@ -78,20 +79,20 @@ shinyUI(fluidPage(
                                sliderInput(inputId="yearRange", label = h5("Year Range"), min = 2006, max = 2015, value = c(2006, 2015), sep="", width = 250),
                                
                                tags$style(HTML(".checkbox-inline {margin-left: 10px;}")),
+                               #tags$style(HTML(".checkbox-inline {margin-right: 5px;}")),
                                
-                               checkboxGroupInput(inputId="analysisMonths", label="Included Months", 
-                                                  choiceNames=c("1 ", "2 ", "3 ", "4 ", "5 ", "6 ", "7 ", "8 ", "9 ", "10", "11", "12"),
+                               checkboxGroupInput(inputId="analysisMonths", label=h5("Included Months"), 
+                                                  choiceNames=c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"),
                                                   choiceValues = c(1,2,3,4,5,6,7,8,9,10,11,12), 
                                                   selected=c(1:12), 
                                                   inline=T, width=270)
-                               
-                               #div(style="display:inline-block",selectInput(inputId="yearMin", label="start year",choices = c(2005:2015), selected=2006, width = 80)),
-                               #div(style="display:inline-block",selectInput(inputId="yearMax", label="end year",choices = c(2005:2015), selected=2015, width = 80)),
-                               #div(style="display:inline-block", checkboxGroupInput(inputId="analysisMonths_1", label="Months", choices = c(1:12), selected=c(1:12), inline=T, width=400))
-                               #div(style="display:inline-block", checkboxGroupInput(inputId="analysisMonths_2", label="", choices = c(1:6), selected=c(1:6), inline=T, width=270))
-                             )
+                               ),
+                             
+                             actionButton(inputId="plotButton", label="Plot Selected Data", width=250)
+                             
                              
                            ),
+                           
                            # Show certain overlap tools 
                            conditionalPanel(
                              
@@ -120,7 +121,7 @@ shinyUI(fluidPage(
                            
                            conditionalPanel(
                              condition = "input.analysisType == 'histogram'",
-                             plotOutput("densitySeries", width="500px", height = "500px") 
+                             plotOutput("densitySeries", width="700px", height = "500px") 
                            )                           
                            
 
