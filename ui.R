@@ -35,16 +35,16 @@ shinyUI(fluidPage(
              tags$style(type = "text/css", "#map {height: calc(100vh - 130px) !important;}"),
              
              
-             tags$style(
-               HTML(".shiny-progress {
-                        position: fixed;
-                        top: 50%;
-                        left: 50%;
-                        right: 50%;
-                    }"
-               )
-             ),
-  
+             # tags$style(
+             #   HTML(".shiny-progress {
+             #            position: fixed;
+             #            top: 50%;
+             #            left: 50%;
+             #            right: 50%;
+             #        }"
+             #   )
+             # ),
+             # 
              
              # Handle the leaflet output 
              leafletOutput("map" , width = "100%", height = 600),

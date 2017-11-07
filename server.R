@@ -385,7 +385,7 @@ shinyServer(function(input, output, session) {
         withProgress(message = 'Making plot', value = 0, {
           
           # Disable update plot button while making a plot 
-          disable("plotButton")
+          #disable("plotButton")
           
           # Based on group and year, load yearly file and plot the data
           yearMin <- as.numeric(input$yearRange)[1]
@@ -554,7 +554,7 @@ shinyServer(function(input, output, session) {
             print(p2, vp=vp.R)
             
           })
-          enable("plotButton")
+          #enable("plotButton")
         })
       }# progress bar
     }
