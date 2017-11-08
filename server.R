@@ -88,9 +88,10 @@ shinyServer(function(input, output, session) {
       
       # Set defualt hidden groups 
       hideGroup("MODIS Fires") %>%
-      hideGroup("Ozone Monitors") %>%
+      #hideGroup("Ozone Monitors") %>%
       hideGroup("CO Monitors") %>%
       hideGroup("MTBS") %>%
+      hideGroup("FPA-FOD Fires") %>%
       
       addLegend(position="bottomright",
                 title="air quality conditions are:",
@@ -520,7 +521,7 @@ shinyServer(function(input, output, session) {
               theme(legend.position=c(0.2, 0.9) ) +
               xlab("Date") +
               ylab(ylab) +
-              ggtitle(paste0("Monitor ID: ", selectID, " ; DeltaPlume = ", deltaPlume))
+              ggtitle(paste0("Monitor ID: ", selectID, "\nDeltaPlume = ", deltaPlume))
             
             
             # The density plot
@@ -535,7 +536,7 @@ shinyServer(function(input, output, session) {
                     plot.margin = unit(c(2,1,0,-0.5), "lines"),
                     legend.position="none") + 
               ylab(paste("Density Estimate")) +
-              ggtitle("")
+              ggtitle(" \n ")
             
             p2 = p2 + coord_flip()
             

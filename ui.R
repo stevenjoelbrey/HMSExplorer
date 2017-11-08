@@ -9,10 +9,6 @@ library(sp)
 library(plotly)
 library(ggplot2)
 library(grid)
-#library(shinyjs)
-
-# TODO: Change analysis plot sizes depending on the size of the size of the screen being used
-# TODO: Summary of expected smoke plumes and non smoke plume values. Expected values. 
 
 # TODO: Make monthly selection and year selection for analysis plots, rbind yearly dataframes for these
 # TODO: analysis plots. 
@@ -126,22 +122,23 @@ shinyUI(fluidPage(
                            
 
                            # Show time series plot when selected 
+                           # TODO: Put these right of the plot selection arguments. 
                            conditionalPanel(
                              # Change CSS of progress bar
                              condition = "input.analysisType == 'AQI scatter'",
                              br(),
-                             plotOutput("seriesPlot", width="500px", height = "500px") 
+                             plotOutput("seriesPlot", width="400px", height = "400px") 
                              
                            ),
                            
                            conditionalPanel(
                              condition = "input.analysisType == 'html scatter'",
-                             plotlyOutput("scatter", width="500px", height = "500px") 
+                             plotlyOutput("scatter", width="400px", height = "400px") 
                            ),
                            
                            conditionalPanel(
                              condition = "input.analysisType == 'histogram'",
-                             plotOutput("densitySeries", width="700px", height = "500px") 
+                             plotOutput("densitySeries", width="600px", height = "400px") 
                            )                           
                            
 
